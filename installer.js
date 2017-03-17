@@ -89,6 +89,7 @@ function getCreateTableParams(tableName) {
 
 function deployDynamo(callback) {
     console.log();
+    console.log("=== deployDynamo ===");
     async.waterfall([
         function (callback) {
             console.log("Searching for table '" + config.tableName + "'");
@@ -100,7 +101,9 @@ function deployDynamo(callback) {
                 callback();
             } else {
                 console.log("Creating table '" + config.tableName + "'");
-                dynamodb.createTable(getCreateTableParams(config.tableName), callback);
+                dynamodb.createTable(getCreateTableParams(config.tableName), function (err, data) {
+                    callback(err)
+                });
             }
         }
     ], callback);
@@ -108,6 +111,7 @@ function deployDynamo(callback) {
 
 function undeployDynamo(callback) {
     console.log();
+    console.log("=== undeployDynamo ===");
     async.waterfall([
         function (callback) {
             console.log("Searching for table '" + config.tableName + "'");
@@ -116,7 +120,9 @@ function undeployDynamo(callback) {
         function (data, callback) {
             if (data.TableNames.indexOf(config.tableName) >= 0) {
                 console.log("Deleting table '" + config.tableName + "'");
-                dynamodb.deleteTable({ TableName: config.tableName }, callback);
+                dynamodb.deleteTable({ TableName: config.tableName }, function (err, data) {
+                    callback(err)
+                });
             } else {
                 console.log("Table '" + config.tableName + "' not found");
                 callback();
@@ -245,13 +251,17 @@ function deleteLambdaExecutionRole(callback) {
                                 iam.detachRolePolicy({
                                     RoleName: config.lambdaExecutionRoleName,
                                     PolicyArn: data.AttachedPolicies[idx].PolicyArn
-                                }, callback);
+                                }, function (err, data) {
+                                    callback(err);
+                                });
                                 idx++;
                             }, callback);
                     },
-                    function () {
+                    function (callback) {
                         console.log("Deleting role '" + config.lambdaExecutionRoleName + "'");
-                        iam.deleteRole({ RoleName: config.lambdaExecutionRoleName }, callback);
+                        iam.deleteRole({ RoleName: config.lambdaExecutionRoleName }, function (err, data) {
+                            callback(err)
+                        });
                     }
                 ], callback);
             } else {
@@ -304,7 +314,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                 }
             });
             if (func) {
-                console.log("Function '" + config.lambdaApiFunctionName + "' found. Updating code");
+                console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
                 var params = {
                     ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE),
                     FunctionName: config.lambdaApiFunctionName,
@@ -315,7 +325,6 @@ function createFimsAmeApiLambdaFunction(callback) {
                 });
             } else {
                 console.log("Creating function '" + config.lambdaApiFunctionName + "'");
-                console.log(lambdaExecutionRole);
 
                 var params = {
                     Code: {
@@ -343,8 +352,35 @@ function createFimsAmeApiLambdaFunction(callback) {
     ], callback);
 }
 
+function deleteFimsAmeApiLambdaFunction(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
+            lambda.listFunctions(callback);
+        },
+        function (data, callback) {
+            var func = null;
+            data.Functions.forEach(f => {
+                if (config.lambdaApiFunctionName === f.FunctionName) {
+                    func = f;
+                }
+            });
+            if (func) {
+                console.log("Deleting function '" + config.lambdaApiFunctionName + "'");
+                lambda.deleteFunction({ FunctionName: config.lambdaApiFunctionName }, function (err, data) {
+                    callback(err)
+                });
+            } else {
+                console.log("Function '" + config.lambdaApiFunctionName + "' not found");
+                callback();
+            }
+        }
+    ], callback);
+}
+
 function deployLambda(callback) {
     console.log();
+    console.log("=== deployLambda ===");
     async.waterfall([
         createLambdaExecutionRole,
         createFimsAmeApiPackage,
@@ -354,7 +390,9 @@ function deployLambda(callback) {
 
 function undeployLambda(callback) {
     console.log();
+    console.log("=== undeployLambda ===");
     async.waterfall([
+        deleteFimsAmeApiLambdaFunction,
         deleteLambdaExecutionRole
     ], callback);
 }
@@ -365,11 +403,13 @@ function undeployLambda(callback) {
 
 function deployGateway(callback) {
     console.log();
+    console.log("=== deployGateway ===");
     callback();
 }
 
 function undeployGateway(callback) {
     console.log();
+    console.log("=== undeployGateway ===");
     callback();
 }
 
