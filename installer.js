@@ -31,6 +31,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
 var dynamodb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 var iam = new AWS.IAM({ apiVersion: "2010-05-08" });
 var lambda = new AWS.Lambda({ apiVersion: "2015-03-31" });
+var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
 
 //////////////////////////////
 //          Config          //
@@ -57,36 +58,6 @@ function loadConfig(callback) {
 //          Dynamo          //
 //////////////////////////////
 
-function getCreateTableParams(tableName) {
-    return {
-        AttributeDefinitions: [
-            {
-                AttributeName: "resource_type",
-                AttributeType: "S"
-            },
-            {
-                AttributeName: "resource_id",
-                AttributeType: "S"
-            }
-        ],
-        KeySchema: [
-            {
-                AttributeName: "resource_type",
-                KeyType: "HASH"
-            },
-            {
-                AttributeName: "resource_id",
-                KeyType: "RANGE"
-            }
-        ],
-        ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-        },
-        TableName: tableName
-    };
-}
-
 function deployDynamo(callback) {
     console.log();
     console.log("=== deployDynamo ===");
@@ -101,7 +72,34 @@ function deployDynamo(callback) {
                 callback();
             } else {
                 console.log("Creating table '" + config.tableName + "'");
-                dynamodb.createTable(getCreateTableParams(config.tableName), function (err, data) {
+                var params = {
+                    AttributeDefinitions: [
+                        {
+                            AttributeName: "resource_type",
+                            AttributeType: "S"
+                        },
+                        {
+                            AttributeName: "resource_id",
+                            AttributeType: "S"
+                        }
+                    ],
+                    KeySchema: [
+                        {
+                            AttributeName: "resource_type",
+                            KeyType: "HASH"
+                        },
+                        {
+                            AttributeName: "resource_id",
+                            KeyType: "RANGE"
+                        }
+                    ],
+                    ProvisionedThroughput: {
+                        ReadCapacityUnits: 5,
+                        WriteCapacityUnits: 5
+                    },
+                    TableName: config.tableName
+                };
+                dynamodb.createTable(params, function (err, data) {
                     callback(err)
                 });
             }
@@ -120,7 +118,10 @@ function undeployDynamo(callback) {
         function (data, callback) {
             if (data.TableNames.indexOf(config.tableName) >= 0) {
                 console.log("Deleting table '" + config.tableName + "'");
-                dynamodb.deleteTable({ TableName: config.tableName }, function (err, data) {
+                var params = {
+                    TableName: config.tableName
+                };
+                dynamodb.deleteTable(params, function (err, data) {
                     callback(err)
                 });
             } else {
@@ -146,20 +147,6 @@ const policyAWSLambdaExecute = {
     PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaExecute"
 };
 
-function getLambdaExecutionRoleParams(lambdaExecutionRoleName) {
-    return {
-        RoleName: lambdaExecutionRoleName,
-        AssumeRolePolicyDocument: JSON.stringify({
-            Version: "2012-10-17",
-            Statement: [{
-                Effect: "Allow",
-                Principal: { "Service": "lambda.amazonaws.com" },
-                Action: "sts:AssumeRole"
-            }]
-        })
-    }
-}
-
 function attachRolePolicy(role, requiredPolicy, currentPolicies, callback) {
     var policy = null;
 
@@ -171,19 +158,22 @@ function attachRolePolicy(role, requiredPolicy, currentPolicies, callback) {
 
     if (policy) {
         console.log("Found required policy '" + policy.PolicyName + "'");
-        callback(null, currentPolicies);
+        callback();
     } else {
         console.log("Attaching required policy '" + requiredPolicy.PolicyName + "'");
-        iam.attachRolePolicy({
+        var params = {
             PolicyArn: requiredPolicy.PolicyArn,
             RoleName: role.RoleName
-        }, function (err, d) {
-            callback(err, currentPolicies);
+        };
+        iam.attachRolePolicy(params, function (err, d) {
+            callback(err);
         });
     }
 }
 
 function createLambdaExecutionRole(callback) {
+    var attachedPolicies;
+
     async.waterfall([
         function (callback) {
             console.log("Searching for role '" + config.lambdaExecutionRoleName + "'");
@@ -202,23 +192,36 @@ function createLambdaExecutionRole(callback) {
                 callback(null, { Role: role });
             } else {
                 console.log("Creating role '" + config.lambdaExecutionRoleName + "'");
-                iam.createRole(getLambdaExecutionRoleParams(config.lambdaExecutionRoleName), callback);
+                var params = {
+                    RoleName: config.lambdaExecutionRoleName,
+                    AssumeRolePolicyDocument: JSON.stringify({
+                        Version: "2012-10-17",
+                        Statement: [{
+                            Effect: "Allow",
+                            Principal: { "Service": "lambda.amazonaws.com" },
+                            Action: "sts:AssumeRole"
+                        }]
+                    })
+                };
+                iam.createRole(params, callback);
             }
         },
         function (data, callback) {
             lambdaExecutionRole = data.Role;
             console.log("Searching for attached policies for role '" + config.lambdaExecutionRoleName + "'");
-            iam.listAttachedRolePolicies({ RoleName: config.lambdaExecutionRoleName }, callback);
+            var params = {
+                RoleName: config.lambdaExecutionRoleName
+            };
+            iam.listAttachedRolePolicies(params, callback);
         },
         function (data, callback) {
-            attachRolePolicy(lambdaExecutionRole, policyAWSLambdaExecute, data.AttachedPolicies, callback);
+            attachedPolicies = data.AttachedPolicies;
+
+            attachRolePolicy(lambdaExecutionRole, policyAWSLambdaExecute, attachedPolicies, callback);
         },
-        function (attachedPolicies, callback) {
+        function (callback) {
             attachRolePolicy(lambdaExecutionRole, policyAmazonDynamoDBFullAccess, attachedPolicies, callback);
         },
-        function (attachedPolicies, callback) {
-            callback();
-        }
     ], callback);
 }
 
@@ -240,7 +243,10 @@ function deleteLambdaExecutionRole(callback) {
                 async.waterfall([
                     function (callback) {
                         console.log("Searching for attached policies for role '" + config.lambdaExecutionRoleName + "'");
-                        iam.listAttachedRolePolicies({ RoleName: config.lambdaExecutionRoleName }, callback);
+                        var params = {
+                            RoleName: config.lambdaExecutionRoleName
+                        };
+                        iam.listAttachedRolePolicies(params, callback);
                     },
                     function (data, callback) {
                         var idx = 0;
@@ -248,10 +254,11 @@ function deleteLambdaExecutionRole(callback) {
                             function () { return idx < data.AttachedPolicies.length; },
                             function (callback) {
                                 console.log("Detaching role policy '" + data.AttachedPolicies[idx].PolicyName + "'");
-                                iam.detachRolePolicy({
+                                var params = {
                                     RoleName: config.lambdaExecutionRoleName,
                                     PolicyArn: data.AttachedPolicies[idx].PolicyArn
-                                }, function (err, data) {
+                                };
+                                iam.detachRolePolicy(params, function (err, data) {
                                     callback(err);
                                 });
                                 idx++;
@@ -259,7 +266,10 @@ function deleteLambdaExecutionRole(callback) {
                     },
                     function (callback) {
                         console.log("Deleting role '" + config.lambdaExecutionRoleName + "'");
-                        iam.deleteRole({ RoleName: config.lambdaExecutionRoleName }, function (err, data) {
+                        var params = {
+                            RoleName: config.lambdaExecutionRoleName
+                        };
+                        iam.deleteRole(params, function (err, data) {
                             callback(err)
                         });
                     }
@@ -275,6 +285,8 @@ function deleteLambdaExecutionRole(callback) {
 //////////////////////////////
 //          Lambda          //
 //////////////////////////////
+
+var lambdaFunction;
 
 function createFimsAmeApiPackage(callback) {
     if (!fs.existsSync("./build")) {
@@ -321,6 +333,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
+                    lambdaFunction = data;
                     callback(err);
                 });
             } else {
@@ -331,7 +344,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                         ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE)
                     },
                     FunctionName: config.lambdaApiFunctionName,
-                    Handler: "lambda-fims-ame-api.handler",
+                    Handler: "fims-ame-rest-api.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
@@ -345,6 +358,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Timeout: 3
                 };
                 lambda.createFunction(params, function (err, data) {
+                    lambdaFunction = data;
                     callback(err);
                 });
             }
@@ -367,7 +381,8 @@ function deleteFimsAmeApiLambdaFunction(callback) {
             });
             if (func) {
                 console.log("Deleting function '" + config.lambdaApiFunctionName + "'");
-                lambda.deleteFunction({ FunctionName: config.lambdaApiFunctionName }, function (err, data) {
+                var params = { FunctionName: config.lambdaApiFunctionName };
+                lambda.deleteFunction(params, function (err, data) {
                     callback(err)
                 });
             } else {
@@ -401,16 +416,274 @@ function undeployLambda(callback) {
 //          Gateway         //
 //////////////////////////////
 
+function createRestAPI(callback) {
+    var restApi;
+    var proxyResource;
+    var proxyResourceAnyMethod;
+
+    var lambdaFunctionArn = lambdaFunction.FunctionArn.substring(0, lambdaFunction.FunctionArn.indexOf(config.lambdaApiFunctionName) + config.lambdaApiFunctionName.length)
+    var lambdaFunctionRegion = lambdaFunctionArn.substring(15, lambdaFunctionArn.indexOf(":", 16));
+    var lambdaFunctionAccountId = lambdaFunctionArn.substring(15 + lambdaFunctionRegion.length + 1, lambdaFunctionArn.indexOf(":", 15 + lambdaFunctionRegion.length + 2));
+
+    var lambdaFunctionIntegrationArn = "arn:aws:apigateway:" + lambdaFunctionRegion + ":lambda:path/2015-03-31/functions/" + lambdaFunctionArn + "/invocations";
+    var restApiExecutionArn = "arn:aws:execute-api:" + lambdaFunctionRegion + ":" + lambdaFunctionAccountId + ":";
+
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for RestAPI '" + config.restApiName + "'");
+            apigateway.getRestApis(callback);
+        },
+        function (data, callback) {
+            data.items.forEach(r => {
+                if (r.name === config.restApiName) {
+                    // if (r.name === "myFirstAPI") {
+                    // if (r.name === "FIMSRepo") {
+                    restApi = r;
+                }
+            });
+
+            if (restApi) {
+                console.log("Found RestAPI '" + config.restApiName + "'");
+                callback();
+            } else {
+                console.log("Creating RestAPI '" + config.restApiName + "'");
+                var params = {
+                    name: config.restApiName
+                }
+                apigateway.createRestApi(params, function (err, data) {
+                    restApi = data;
+                    callback(err);
+                });
+            }
+        },
+        function (callback) {
+            console.log("Searching for RestAPI Proxy Resource");
+            apigateway.getResources({ restApiId: restApi.id }, callback);
+        },
+        function (data, callback) {
+            var rootResource;
+
+            data.items.forEach(r => {
+                switch (r.path) {
+                    case "/":
+                        rootResource = r;
+                        break;
+                    case "/{proxy+}":
+                        proxyResource = r;
+                        break;
+                }
+            });
+
+            if (proxyResource) {
+                console.log("Found RestAPI Proxy Resource");
+                callback();
+            } else {
+                console.log("Creating RestAPI Proxy Resource");
+                var params = {
+                    parentId: rootResource.id,
+                    pathPart: "{proxy+}",
+                    restApiId: restApi.id
+                };
+                apigateway.createResource(params, function (err, data) {
+                    proxyResource = data;
+                    callback(err);
+                });
+            }
+        }, function (callback) {
+            console.log("Searching for ANY method");
+            if (proxyResource.resourceMethods && proxyResource.resourceMethods.ANY) {
+                var params = {
+                    httpMethod: 'ANY',
+                    resourceId: proxyResource.id,
+                    restApiId: restApi.id
+                };
+                apigateway.getMethod(params, function (err, data) {
+                    console.log("Found ANY method");
+                    proxyResourceAnyMethod = data;
+                    callback(err);
+                });
+            } else {
+                console.log("Creating ANY method");
+
+                var params = {
+                    httpMethod: 'ANY',
+                    authorizationType: 'NONE',
+                    apiKeyRequired: false,
+                    resourceId: proxyResource.id,
+                    restApiId: restApi.id,
+                    requestParameters: {
+                        'method.request.path.proxy': true
+                    }
+                };
+                apigateway.putMethod(params, function (err, data) {
+                    proxyResourceAnyMethod = data;
+                    callback(err);
+                });
+            }
+        }, function (callback) {
+            console.log("Searching for ANY method integration");
+
+            if (proxyResourceAnyMethod.methodIntegration) {
+                var params = {
+                    httpMethod: 'ANY',
+                    resourceId: proxyResource.id,
+                    restApiId: restApi.id
+                };
+                apigateway.getIntegration(params, function (err, data) {
+                    console.log("Found ANY method integration");
+                    callback(err);
+                });
+            } else {
+                console.log("Creating ANY method integration with lambda function");
+
+                var params = {
+                    httpMethod: 'ANY',
+                    resourceId: proxyResource.id,
+                    restApiId: restApi.id,
+                    type: 'AWS_PROXY',
+                    cacheKeyParameters: [
+                        'method.request.path.proxy'
+                    ],
+                    cacheNamespace: proxyResource.id,
+                    contentHandling: 'CONVERT_TO_TEXT',
+                    integrationHttpMethod: 'POST',
+                    passthroughBehavior: 'WHEN_NO_MATCH',
+                    uri: lambdaFunctionIntegrationArn
+                };
+                apigateway.putIntegration(params, function (err, data) {
+                    if (err) console.log(err, err.stack); // an error occurred
+                    else console.log(data);           // successful response
+
+                    callback(err);
+                });
+            }
+        }, function (callback) {
+            console.log("Searching for lambda policy allowing invocation by API Gateway");
+
+            var params = {
+                FunctionName: config.lambdaApiFunctionName
+            }
+            lambda.getPolicy(params, function (err, data) {
+                var policyPresent = false;
+
+                restApiExecutionArn += restApi.id + "/*/*/*";
+
+                if (data) {
+                    var policy = JSON.parse(data.Policy);
+
+                    policy.Statement.forEach(st => {
+                        if (st.Action === "lambda:InvokeFunction" &&
+                            st.Principal.Service === "apigateway.amazonaws.com" &&
+                            st.Resource === lambdaFunctionArn &&
+                            st.Condition.ArnLike["AWS:SourceArn"] === restApiExecutionArn) {
+                            policyPresent = true;
+                        }
+                    });
+                }
+
+                if (policyPresent) {
+                    console.log("Found Lambda Policy");
+                    callback();
+                } else {
+                    console.log("Creating Lambda Policy");
+
+                    var params = {
+                        Action: "lambda:InvokeFunction",
+                        FunctionName: config.lambdaApiFunctionName,
+                        Principal: "apigateway.amazonaws.com",
+                        SourceArn: restApiExecutionArn,
+                        StatementId: restApi.id + "-" + config.restApiName
+                    };
+                    lambda.addPermission(params, function (err, data) {
+                        callback(err);
+                    });
+                }
+            });
+        }, function (callback) {
+            console.log("Searching for Rest API Deployment")
+
+            var params = {
+                restApiId: restApi.id
+            }
+            apigateway.getStages(params, callback);
+        }, function (data, callback) {
+
+            var deployment;
+
+            data.item.forEach(d => {
+                if (d.stageName === config.restApiStageName) {
+                    deployment = d;
+                }
+            });
+
+            if (deployment) {
+                console.log("Found Rest API Deployment");
+                callback();
+            } else {
+                console.log("Creating Rest API Deployment");
+                var params = {
+                    restApiId: restApi.id,
+                    cacheClusterEnabled: false,
+                    stageName: config.restApiStageName
+                };
+                apigateway.createDeployment(params, function (err, data) {
+                    callback(err);
+                });
+                
+            }
+        }, function (callback) {
+            console.log("https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName)
+            callback();
+        }
+
+    ], callback);
+}
+
+function deleteRestAPI(callback) {
+    var restApi;
+
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for RestAPI '" + config.restApiName + "'");
+            apigateway.getRestApis(callback);
+        },
+        function (data, callback) {
+            data.items.forEach(r => {
+                if (r.name === config.restApiName) {
+                    restApi = r;
+                }
+            });
+
+            if (restApi) {
+                console.log("Deleting RestAPI '" + config.restApiName + "'");
+                var params = {
+                    restApiId: restApi.id
+                }
+                apigateway.deleteRestApi(params, function (err, data) {
+                    callback(err);
+                });
+            } else {
+                console.log("RestAPI '" + config.restApiName + "' not found");
+                callback();
+            }
+        }
+    ], callback);
+}
+
 function deployGateway(callback) {
     console.log();
     console.log("=== deployGateway ===");
-    callback();
+    async.waterfall([
+        createRestAPI
+    ], callback);
 }
 
 function undeployGateway(callback) {
     console.log();
     console.log("=== undeployGateway ===");
-    callback();
+    async.waterfall([
+        deleteRestAPI
+    ], callback);
 }
 
 //////////////////////////////
@@ -435,9 +708,9 @@ switch (command) {
         functions.push(deployGateway);
         break;
     case "undeploy":
-        functions.push(undeployDynamo);
-        functions.push(undeployLambda);
         functions.push(undeployGateway);
+        functions.push(undeployLambda);
+        functions.push(undeployDynamo);
         break;
     case "deployDynamo":
         functions.push(deployDynamo);
@@ -452,6 +725,7 @@ switch (command) {
         functions.push(undeployLambda);
         break;
     case "deployGateway":
+        functions.push(deployLambda);
         functions.push(deployGateway);
         break;
     case "undeployGateway":
