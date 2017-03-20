@@ -338,7 +338,6 @@ function createFimsAmeApiLambdaFunction(callback) {
                 });
             } else {
                 console.log("Creating function '" + config.lambdaApiFunctionName + "'");
-
                 var params = {
                     Code: {
                         ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE)
@@ -393,6 +392,37 @@ function deleteFimsAmeApiLambdaFunction(callback) {
     ], callback);
 }
 
+function updateFimsAmeApiLambdaFunction(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
+            lambda.listFunctions(callback);
+        },
+        function (data, callback) {
+            var func = null;
+            data.Functions.forEach(f => {
+                if (config.lambdaApiFunctionName === f.FunctionName) {
+                    func = f;
+                }
+            });
+            if (func) {
+                console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
+                var params = {
+                    ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE),
+                    FunctionName: config.lambdaApiFunctionName,
+                    Publish: true
+                }
+                lambda.updateFunctionCode(params, function (err, data) {
+                    lambdaFunction = data;
+                    callback(err);
+                });
+            } else {
+                callback("Not found function '" + config.lambdaApiFunctionName + "'");
+            }
+        }
+    ], callback);
+}
+
 function deployLambda(callback) {
     console.log();
     console.log("=== deployLambda ===");
@@ -409,6 +439,15 @@ function undeployLambda(callback) {
     async.waterfall([
         deleteFimsAmeApiLambdaFunction,
         deleteLambdaExecutionRole
+    ], callback);
+}
+
+function updateFimsAmeApiCode(callback) {
+    console.log();
+    console.log("=== updateFimsAmeApiCode ===");
+    async.waterfall([
+        createFimsAmeApiPackage,
+        updateFimsAmeApiLambdaFunction
     ], callback);
 }
 
@@ -551,9 +590,6 @@ function createRestAPI(callback) {
                     uri: lambdaFunctionIntegrationArn
                 };
                 apigateway.putIntegration(params, function (err, data) {
-                    if (err) console.log(err, err.stack); // an error occurred
-                    else console.log(data);           // successful response
-
                     callback(err);
                 });
             }
@@ -629,7 +665,7 @@ function createRestAPI(callback) {
                 apigateway.createDeployment(params, function (err, data) {
                     callback(err);
                 });
-                
+
             }
         }, function (callback) {
             console.log("https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName)
@@ -712,24 +748,8 @@ switch (command) {
         functions.push(undeployLambda);
         functions.push(undeployDynamo);
         break;
-    case "deployDynamo":
-        functions.push(deployDynamo);
-        break;
-    case "undeployDynamo":
-        functions.push(undeployDynamo);
-        break;
-    case "deployLambda":
-        functions.push(deployLambda);
-        break;
-    case "undeployLambda":
-        functions.push(undeployLambda);
-        break;
-    case "deployGateway":
-        functions.push(deployLambda);
-        functions.push(deployGateway);
-        break;
-    case "undeployGateway":
-        functions.push(undeployGateway);
+    case "updateFimsAmeApiCode":
+        functions.push(updateFimsAmeApiCode);
         break;
 }
 

@@ -13,13 +13,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "deploy": "node ./installer.js deploy",
-    "deployDynamo": "node ./installer.js deployDynamo",
-    "deployLambda": "node ./installer.js deployLambda",
-    "deployGateway": "node ./installer.js deployGateway",
     "undeploy": "node ./installer.js undeploy",
-    "undeployDynamo": "node ./installer.js undeployDynamo",
-    "undeployLambda": "node ./installer.js undeployLambda",
-    "undeployGateway": "node ./installer.js undeployGateway"
+    "updateFimsAmeApiCode": "node ./installer.js updateFimsAmeApiCode"
   },
   "dependencies": {
     "archiver": "^1.3.0",
