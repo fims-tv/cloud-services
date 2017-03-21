@@ -2,21 +2,25 @@ var http = require("http");
 var uuid = require("uuid");
 var url = require("url");
 
-var ame = require("./fims-ame-rest-api.js");
+var apiHandler = require("./fims-ame-rest-api.js");
 var configuration = require("./configuration.js");
 
 var port = process.argv[2] || 8888;
 
 console.log("Starting");
 
-var config = configuration.load();
+var deployConfig = configuration.deployConfig();
+var testConfig = configuration.testConfig();
+
+apiHandler.AWS.config.region = testConfig.local.region;
+apiHandler.AWS.config.endpoint = testConfig.local.dynamodb
 
 http.createServer(function (request, response) {
     var body = null;
 
     request.on("data", function (data) {
         if (body === null) {
-            body = data;
+            body = "" + data;
         } else {
             body += data;
         }
@@ -37,12 +41,12 @@ http.createServer(function (request, response) {
                 proxy: requestUrl.pathname.substring(1),
             },
             stageVariables: {
-                TableName: config.tableName
+                TableName: deployConfig.tableName
             },
             requestContext: {
                 accountId: "123456789012",
                 resourceId: "abcdef",
-                stage: config.restApiStageName,
+                stage: deployConfig.restApiStageName,
                 requestId: requestId,
                 identity: {
                     cognitoIdentityPoolId: null,
@@ -78,7 +82,7 @@ http.createServer(function (request, response) {
             invokedFunctionArn: "arn:aws:lambda:us-east-1:123456789012:function:lambda-function"
         };
 
-        ame.handler(event, context, function (err, data) {
+        apiHandler.handler(event, context, function (err, data) {
             response.writeHead(data.statusCode, data.headers);
             response.write(data.body)
             response.end();

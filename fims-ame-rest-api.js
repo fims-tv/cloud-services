@@ -1,21 +1,34 @@
 //'use strict';
 var AWS = require("aws-sdk");
-var doc = require('dynamodb-doc');
+var doc = require("dynamodb-doc");
+var jsonld = require("jsonld");
 
-var dynamo = new doc.DynamoDB();
-var docClient = new AWS.DynamoDB.DocumentClient();
-var jsonld = require('jsonld');
+var dynamo;
+var docClient;
+
+function prepare() {
+    if (!dynamo) {
+        dynamo = new doc.DynamoDB();
+    }
+    if (!docClient) {
+        docClient = new AWS.DynamoDB.DocumentClient();
+    }
+}
+
+exports.AWS = AWS;
 
 exports.handler = (event, context, callback) => {
-    console.log('Received event:', JSON.stringify(event, null, 2));
+    prepare();
 
-    console.log('Resource path:', event.path);
+    console.log("Received event:", JSON.stringify(event, null, 2));
+
+    console.log("Resource path:", event.path);
 
     const done = (err, res) => callback(null, {
-        statusCode: err ? '400' : '200',
+        statusCode: err ? "400" : "200",
         body: err ? err.message : JSON.stringify(res),
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         },
     });
 
@@ -28,6 +41,7 @@ exports.handler = (event, context, callback) => {
             break;
         default:
             done(null, {event: event, context: context});
+            break;
     }
 };
 

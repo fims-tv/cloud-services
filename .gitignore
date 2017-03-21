@@ -36,6 +36,7 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 /credentials.json
-/config.json
 /.vscode
 /build
+/deploy-config.json
+/test-config.json

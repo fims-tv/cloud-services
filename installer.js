@@ -114,6 +114,12 @@ function undeployDynamo(callback) {
     ], callback);
 }
 
+function deployDynamoLocal(callback) {
+    var testConfig = configuration.testConfig();
+    dynamodb.endpoint = new AWS.Endpoint(testConfig.local.dynamodb);
+    deployDynamo(callback);
+}
+
 //////////////////////////////
 //           IAM            //
 //////////////////////////////
@@ -648,7 +654,7 @@ function createRestAPI(callback) {
 
             }
         }, function (callback) {
-            console.log("https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName)
+            console.log("{\n  \"endpoint\": \"https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName + "\"\n}");
             callback();
         }
 
@@ -707,7 +713,7 @@ function undeployGateway(callback) {
 //////////////////////////////
 console.log("Starting");
 
-var config = configuration.load();
+var config = configuration.deployConfig();
 
 var command = "";
 if (process.argv.length > 2) {
@@ -729,6 +735,9 @@ switch (command) {
         break;
     case "updateFimsAmeApiCode":
         functions.push(updateFimsAmeApiCode);
+        break;
+    case "deployLocal":
+        functions.push(deployDynamoLocal);
         break;
 }
 
