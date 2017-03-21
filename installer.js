@@ -8,13 +8,14 @@ var archiver = require("archiver");
 var async = require("async");
 var AWS = require("aws-sdk");
 var fs = require("fs");
+var configuration = require("./configuration.js");
 
 //////////////////////////////
 //         Constants        //
 //////////////////////////////
 
 var CREDENTIALS_FILE = "./credentials.json";
-var CONFIG_FILE = "./config.json";
+
 var FIMS_AME_API_PACKAGE_FILE = "./build/fims-ame-api-package.zip";
 
 //////////////////////////////
@@ -24,7 +25,9 @@ var FIMS_AME_API_PACKAGE_FILE = "./build/fims-ame-api-package.zip";
 if (fs.existsSync(CREDENTIALS_FILE)) {
     AWS.config.loadFromPath(CREDENTIALS_FILE);
 } else {
-    console.error("AWS credentials file is missing (" + CREDENTIALS_FILE + ")");
+    console.error("AWS credentials file is missing");
+    console.error("Create a file with name '" + CREDENTIALS_FILE + "' with the following content:");
+    console.error("{ \"accessKeyId\": <YOUR_ACCESS_KEY_ID>, \"secretAccessKey\": <YOUR_SECRET_ACCESS_KEY>, \"region\": \"us-east-1\" }");
     process.exit(1);
 }
 
@@ -32,27 +35,6 @@ var dynamodb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 var iam = new AWS.IAM({ apiVersion: "2010-05-08" });
 var lambda = new AWS.Lambda({ apiVersion: "2015-03-31" });
 var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
-
-//////////////////////////////
-//          Config          //
-//////////////////////////////
-
-var config;
-
-function loadConfig(callback) {
-    console.log();
-    async.waterfall([
-        function (callback) {
-            console.log("Loading config file");
-            fs.readFile(CONFIG_FILE, callback)
-        },
-        function (data, callback) {
-            config = JSON.parse(data.toString());
-            console.log("Config file loaded");
-            callback();
-        }
-    ], callback);
-}
 
 //////////////////////////////
 //          Dynamo          //
@@ -347,11 +329,6 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
-                    Environment: {
-                        Variables: {
-                            TableName: config.tableName
-                        }
-                    },
                     MemorySize: 128,
                     Publish: true,
                     Timeout: 3
@@ -660,7 +637,10 @@ function createRestAPI(callback) {
                 var params = {
                     restApiId: restApi.id,
                     cacheClusterEnabled: false,
-                    stageName: config.restApiStageName
+                    stageName: config.restApiStageName,
+                    variables: {
+                        TableName: config.tableName
+                    }
                 };
                 apigateway.createDeployment(params, function (err, data) {
                     callback(err);
@@ -725,8 +705,9 @@ function undeployGateway(callback) {
 //////////////////////////////
 //         Installer        //
 //////////////////////////////
-
 console.log("Starting");
+
+var config = configuration.load();
 
 var command = "";
 if (process.argv.length > 2) {
@@ -734,8 +715,6 @@ if (process.argv.length > 2) {
 }
 
 var functions = [];
-
-functions.push(loadConfig);
 
 switch (command) {
     case "deploy":

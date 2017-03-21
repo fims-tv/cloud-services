@@ -20,7 +20,9 @@
     "archiver": "^1.3.0",
     "async": "^2.1.5",
     "aws-sdk": "^2.28.0",
-    "jsonld": "^0.4.11"
+    "dynamodb-doc": "^1.0.0",
+    "jsonld": "^0.4.11",
+    "uuid": "^3.0.1"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-ame-service/issues"
