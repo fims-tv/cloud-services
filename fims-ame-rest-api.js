@@ -142,7 +142,7 @@ function handlePost(stageVariables, resourceDescriptor, resource, done) {
 
         repository.put(stageVariables.TableName, resource, function (err) {
             if (err) {
-                console.error("Unable to POST to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
+                console.error("Unable to POST to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
                 done(500);
             } else {
                 done(201, resource, { Location: stageVariables.PublicUrl + "/" + resource.type + "/" + resource.id });
@@ -152,7 +152,24 @@ function handlePost(stageVariables, resourceDescriptor, resource, done) {
 }
 
 function handlePut(stageVariables, resourceDescriptor, resource, done) {
-    done(500);
+    if (resourceDescriptor.id) {
+        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+            if (err) {
+                done(404);
+            } else {
+                repository.put(stageVariables.TableName, resource, function (err) {
+                    if (err) {
+                        console.error("Unable to PUT to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
+                        done(500);
+                    } else {
+                        done(200, resource);
+                    }
+                });
+            }
+        });
+    } else {
+        done(404);
+    }
 }
 
 function handleDelete(stageVariables, resourceDescriptor, done) {
@@ -163,7 +180,7 @@ function handleDelete(stageVariables, resourceDescriptor, done) {
             } else {
                 repository.delete(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err) {
                     if (err) {
-                        console.error("Unable to DELETE from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
+                        console.error("Unable to DELETE from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                         done(500);
                     } else {
                         done(200, data);
@@ -177,7 +194,7 @@ function handleDelete(stageVariables, resourceDescriptor, done) {
 }
 
 function handlePatch(stageVariables, resourceDescriptor, patch, done) {
-    done(500);
+    done(501);
 }
 
 function processResource(resource) {

@@ -73,7 +73,7 @@ var all = {
                 hasRelatedResource: "http://urlToBMEssence"
             }
         }, function (error, response, body) {
-            checkResponse(error, response, body, 201, [ "location" ], function (err) {
+            checkResponse(error, response, body, 201, ["location"], function (err) {
                 if (err) {
                     callback(err);
                 } else {
@@ -119,6 +119,40 @@ var all = {
 
                             idx++;
                         }, callback);
+                }
+            });
+        });
+    },
+
+    // Insert new job and overwrite it with put
+    test5: function (callback) {
+        console.log()
+        console.log("=== Test 5 ===");
+
+        request({
+            url: testConfig[target].endpoint + "/Job",
+            method: "POST",
+            json: true,
+            body: {
+                type: "Job",
+                profile: "http://urltoProfile",
+                hasRelatedResource: "http://urlToBMEssence"
+            }
+        }, function (error, response, body) {
+            checkResponse(error, response, body, 201, ["location"], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    body.profile = "http://anotherProfile";
+
+                    request({
+                        url: response.headers.location,
+                        method: "PUT",
+                        json: true,
+                        body: body
+                    }, function (error, response, body) {
+                        checkResponse(error, response, body, 200, [], callback);
+                    });
                 }
             });
         });
