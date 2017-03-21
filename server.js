@@ -41,7 +41,8 @@ http.createServer(function (request, response) {
                 proxy: requestUrl.pathname.substring(1),
             },
             stageVariables: {
-                TableName: deployConfig.tableName
+                TableName: deployConfig.tableName,
+                PublicUrl: "http://localhost:" + port
             },
             requestContext: {
                 accountId: "123456789012",
@@ -84,7 +85,9 @@ http.createServer(function (request, response) {
 
         apiHandler.handler(event, context, function (err, data) {
             response.writeHead(data.statusCode, data.headers);
-            response.write(data.body)
+            if (data.body) {
+                response.write(data.body)
+            }
             response.end();
             return;
         });

@@ -8,13 +8,13 @@ var TEST_CONFIG_FILE = "./test-config.json";
 module.exports = {
     deployConfig: function () {
         console.log();
-        console.log("Loading deploy-config file");
+        console.log("Loading Deployment Configuration file");
         if (fs.existsSync(DEPLOY_CONFIG_FILE)) {
             var data = fs.readFileSync(DEPLOY_CONFIG_FILE);
-            console.log("Deploy-config file loaded");
+            console.log("Deployment Configuration file loaded");
             return JSON.parse(data.toString());
         } else {
-            console.error("Deployment configuration file is missing");
+            console.error("Deployment Configuration file is missing");
             console.error("Create a file with name '" + DEPLOY_CONFIG_FILE + "' with the following content:");
             console.error("{");
             console.error("  \"tableName\": \"fims-ame\",");
@@ -28,13 +28,13 @@ module.exports = {
     },
     testConfig: function () {
         console.log();
-        console.log("Loading test-config file");
+        console.log("Loading Test Configuration file");
         if (fs.existsSync(TEST_CONFIG_FILE)) {
             var data = fs.readFileSync(TEST_CONFIG_FILE);
-            console.log("Test config file loaded");
+            console.log("Test Configuration file loaded");
             return JSON.parse(data.toString());
         } else {
-            console.error("Test configuration file is missing");
+            console.error("Test Configuration file is missing");
             console.error("Create a file with name '" + TEST_CONFIG_FILE + "' with the following content:");
             console.error(
                 "{\n" +

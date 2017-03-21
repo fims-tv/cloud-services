@@ -296,7 +296,9 @@ function createFimsAmeApiPackage(callback) {
     archive.pipe(output);
 
     archive.file("fims-ame-rest-api.js");
+    archive.file("fims-ame-repository.js");
     archive.directory("node_modules/jsonld/");
+    archive.directory("node_modules/uuid/");
     archive.finalize();
 }
 
@@ -645,7 +647,8 @@ function createRestAPI(callback) {
                     cacheClusterEnabled: false,
                     stageName: config.restApiStageName,
                     variables: {
-                        TableName: config.tableName
+                        TableName: config.tableName,
+                        PublicUrl: "https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName
                     }
                 };
                 apigateway.createDeployment(params, function (err, data) {
@@ -654,7 +657,7 @@ function createRestAPI(callback) {
 
             }
         }, function (callback) {
-            console.log("{\n  \"endpoint\": \"https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName + "\"\n}");
+            console.log("AWS endpoint: \"https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName + "\"");
             callback();
         }
 

@@ -2,45 +2,58 @@
 var AWS = require("aws-sdk");
 var doc = require("dynamodb-doc");
 var jsonld = require("jsonld");
+var uuid = require("uuid");
+var repository = require("./fims-ame-repository.js");
 
-var dynamo;
-var docClient;
-
-function prepare() {
-    if (!dynamo) {
-        dynamo = new doc.DynamoDB();
-    }
-    if (!docClient) {
-        docClient = new AWS.DynamoDB.DocumentClient();
-    }
-}
-
+// exporting AWS so we can modify properties in development environment
 exports.AWS = AWS;
 
 exports.handler = (event, context, callback) => {
-    prepare();
+    repository.setup(AWS);
 
-    console.log("Received event:", JSON.stringify(event, null, 2));
+    // console.log("Received event:", JSON.stringify(event, null, 2));
+    // console.log("Resource path:", event.path);
 
-    console.log("Resource path:", event.path);
-
-    const done = (err, res) => callback(null, {
-        statusCode: err ? "400" : "200",
-        body: err ? err.message : JSON.stringify(res),
-        headers: {
+    const done = (statusCode, body, additionalHeaders) => {
+        var headers = {
             "Content-Type": "application/json",
-        },
-    });
+        }
+
+        if (additionalHeaders) {
+            for (var prop in additionalHeaders) {
+                headers[prop] = additionalHeaders[prop];
+            }
+        }
+
+        callback(null, {
+            statusCode: statusCode,
+            body: JSON.stringify(body),
+            headers: headers
+        })
+    };
+
+    var resourceDescriptor = parseResourceUrl(event.path);
+    var resource = processResource(event.body);
+
+    switch (resource.type) {
+        case "Job":
+        case "Profile":
+        case "Report":
+            break;
+        default:
+            done(404);
+            return;
+    }
 
     switch (event.httpMethod) {
         case "GET":
-            handleGet(event, done);
+            handleGet(event.stageVariables, resourceDescriptor, done);
             break;
         case "POST":
-            handlePost(event, done);
+            handlePost(event.stageVariables, resourceDescriptor, resource, done);
             break;
         default:
-            done(null, {event: event, context: context});
+            done(200, { event: event, context: context });
             break;
     }
 };
@@ -63,31 +76,62 @@ function parseResourceUrl(path) {
     return result;
 }
 
-function handleGet(event, done) {
-    var resource = parseResourceUrl(event.path);
+function handleGet(stageVariables, resourceDescriptor, done) {
+    if (resourceDescriptor.id) {
+        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+            if (err) {
+                console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
 
-    done(null, resource);
+                done(404);
+            } else {
+                console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
+
+                done(200, data);
+            }
+        });
+    } else {
+        repository.getAll(stageVariables.TableName, resourceDescriptor.type, function (err, data) {
+            if (err) {
+                console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
+
+                done(500);
+            } else {
+                console.log("Query succeeded.");
+
+                done(200, data);
+            }
+        });
+    }
 }
 
-function handlePost(event, done) {
-    var indexItem3 = {
-        "resource_type": "test",
-        "resource_id": "123",
-        "resource": { type: "test", resource_id: "123", data: "yet another value" }
-    };
-
-    var params3 = {
-        TableName: event.stageVariables.TableName,
-        Item: indexItem3
-    };
-
-    docClient.put(params3, function (err, data) {
-        if (err) {
-            console.error("Unable to add resource, Error JSON:", JSON.stringify(err, null, 2));
-            done(err);
+function handlePost(stageVariables, resourceDescriptor, resource, done) {
+    if (resourceDescriptor.type !== resource.type) {
+        done(400, "Resource type does not correspond with type in payload ('" + resourceDescriptor.type + "' != '" + resource.type + "')");
+    } else if (resourceDescriptor.id || resource.id) {
+        if (resourceDescriptor.id !== resource.id) {
+            done(400, "Resource ID does not match ID in payload ('" + resourceDescriptor.id + "' != '" + resource.id + "')");
         } else {
-            console.log("DynamoDB Put succeeded: for resource_id", indexItem3.resource_id);
-            done(err, indexItem3.resource);
+            repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+                if (err) {
+                    done(404);
+                } else {
+                    done(409);
+                }
+            });
         }
-    });
+    } else {
+        resource.id = uuid.v4();
+
+        repository.put(stageVariables.TableName, resource, function (err) {
+            if (err) {
+                done(500);
+            } else {
+                done(201, resource, { Location: stageVariables.PublicUrl + "/" + resource.type + "/" + resource.id });
+            }
+        });
+    }
+}
+
+function processResource(payload) {
+    return JSON.parse(payload);
 }

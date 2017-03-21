@@ -3,6 +3,28 @@ var async = require("async");
 var request = require("request");
 var configuration = require("./configuration.js");
 
+function checkResponse(error, response, body, expectedStatusCode, expectedHeaders, callback) {
+    if (!error) {
+        if (response.statusCode !== expectedStatusCode) {
+            console.warn("ERROR - Response Status Code: " + response.statusCode + " (Expected: " + expectedStatusCode + ")");
+        } else {
+            console.log("OK    - Response Status Code: " + response.statusCode);
+        }
+
+        if (response.headers) {
+            //console.log(response.headers);
+        }
+
+        if (body) {
+            console.log()
+            console.log("---------- MESSAGE CONTENT ----------")
+            console.log(body);
+            console.log("---------- MESSAGE CONTENT ----------")
+        }
+    }
+    callback(error);
+}
+
 var all = {
     // Retrieve all jobs
     test1: function (callback) {
@@ -14,15 +36,11 @@ var all = {
             method: "GET",
             json: true
         }, function (error, response, body) {
-            if (!error && response.statusCode === 200) {
-                console.log(body);
-            }
-
-            callback(error);
+            checkResponse(error, response, body, 200, [], callback);
         });
     },
 
-    // Insert new job
+    // Insert malformed job
     test2: function (callback) {
         console.log()
         console.log("=== Test 2 ===");
@@ -36,21 +54,40 @@ var all = {
                 hasRelatedResource: "http://urlToBMEssence"
             }
         }, function (error, response, body) {
-            if (!error) {
-                console.log(body);
-            }
-            
-            callback(error);
+            checkResponse(error, response, body, 400, [], callback);
         });
     },
 
-    // GET specific job
+    // Insert new job
     test3: function (callback) {
         console.log()
         console.log("=== Test 3 ===");
 
-        callback();
-    }
+        request({
+            url: testConfig[target].endpoint + "/Job",
+            method: "POST",
+            json: true,
+            body: {
+                type: "Job",
+                profile: "http://urltoProfile",
+                hasRelatedResource: "http://urlToBMEssence"
+            }
+        }, function (error, response, body) {
+            checkResponse(error, response, body, 201, [], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    request({
+                        url: response.headers.location,
+                        method: "GET",
+                        json: true
+                    }, function (error, response, body) {
+                        checkResponse(error, response, body, 200, [], callback);
+                    });
+                }
+            });
+        });
+    },
 }
 
 //////////////////////////////
