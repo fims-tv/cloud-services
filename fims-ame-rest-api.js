@@ -29,13 +29,17 @@ exports.handler = (event, context, callback) => {
             statusCode: statusCode,
             body: JSON.stringify(body),
             headers: headers
-        })
+        });
     };
 
     var resourceDescriptor = parseResourceUrl(event.path);
-    var resource = processResource(event.body);
 
-    switch (resource.type) {
+    if (resourceDescriptor.error) {
+        done(404);
+        return;
+    }
+
+    switch (resourceDescriptor.type) {
         case "Job":
         case "Profile":
         case "Report":
@@ -45,6 +49,21 @@ exports.handler = (event, context, callback) => {
             return;
     }
 
+    var resource;
+    if (event.body) {
+        resource = processResource(event.body);
+    }
+
+    if (resource) {
+        if (resourceDescriptor.type !== resource.type) {
+            done(400, "Resource type does not correspond with type in payload ('" + resourceDescriptor.type + "' != '" + resource.type + "')");
+            return;
+        } else if (resourceDescriptor.id && resourceDescriptor.id !== resource.id) {
+            done(400, "Resource ID does not match ID in payload ('" + resourceDescriptor.id + "' != '" + resource.id + "')");
+            return;
+        }
+    }
+
     switch (event.httpMethod) {
         case "GET":
             handleGet(event.stageVariables, resourceDescriptor, done);
@@ -52,8 +71,17 @@ exports.handler = (event, context, callback) => {
         case "POST":
             handlePost(event.stageVariables, resourceDescriptor, resource, done);
             break;
+        case "PUT":
+            handlePut(event.stageVariables, resourceDescriptor, resource, done);
+            break;
+        case "DELETE":
+            handleDelete(event.stageVariables, resourceDescriptor, done);
+            break;
+        case "PATCH":
+            handlePatch(event.stageVariables, resourceDescriptor, resource, done);
+            break;
         default:
-            done(200, { event: event, context: context });
+            done(500);
             break;
     }
 };
@@ -67,6 +95,8 @@ function parseResourceUrl(path) {
     };
 
     switch (parts.length) {
+        case 4:
+            result.error = true;
         case 3:
             result.id = parts[2];
         case 2:
@@ -80,24 +110,18 @@ function handleGet(stageVariables, resourceDescriptor, done) {
     if (resourceDescriptor.id) {
         repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
             if (err) {
-                console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-
+                console.error("Unable to GET from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "' for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                 done(404);
             } else {
-                console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-
                 done(200, data);
             }
         });
     } else {
         repository.getAll(stageVariables.TableName, resourceDescriptor.type, function (err, data) {
             if (err) {
-                console.error("Unable to query. Error:", JSON.stringify(err, null, 2));
-
+                console.error("Unable to GET from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
                 done(500);
             } else {
-                console.log("Query succeeded.");
-
                 done(200, data);
             }
         });
@@ -105,25 +129,20 @@ function handleGet(stageVariables, resourceDescriptor, done) {
 }
 
 function handlePost(stageVariables, resourceDescriptor, resource, done) {
-    if (resourceDescriptor.type !== resource.type) {
-        done(400, "Resource type does not correspond with type in payload ('" + resourceDescriptor.type + "' != '" + resource.type + "')");
-    } else if (resourceDescriptor.id || resource.id) {
-        if (resourceDescriptor.id !== resource.id) {
-            done(400, "Resource ID does not match ID in payload ('" + resourceDescriptor.id + "' != '" + resource.id + "')");
-        } else {
-            repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
-                if (err) {
-                    done(404);
-                } else {
-                    done(409);
-                }
-            });
-        }
+    if (resourceDescriptor.id) {
+        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+            if (err) {
+                done(404);
+            } else {
+                done(409);
+            }
+        });
     } else {
         resource.id = uuid.v4();
 
         repository.put(stageVariables.TableName, resource, function (err) {
             if (err) {
+                console.error("Unable to POST to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                 done(500);
             } else {
                 done(201, resource, { Location: stageVariables.PublicUrl + "/" + resource.type + "/" + resource.id });
@@ -132,6 +151,35 @@ function handlePost(stageVariables, resourceDescriptor, resource, done) {
     }
 }
 
-function processResource(payload) {
-    return JSON.parse(payload);
+function handlePut(stageVariables, resourceDescriptor, resource, done) {
+    done(500);
+}
+
+function handleDelete(stageVariables, resourceDescriptor, done) {
+    if (resourceDescriptor.id) {
+        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+            if (err) {
+                done(404);
+            } else {
+                repository.delete(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err) {
+                    if (err) {
+                        console.error("Unable to DELETE from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
+                        done(500);
+                    } else {
+                        done(200, data);
+                    }
+                });
+            }
+        });
+    } else {
+        done(404);
+    }
+}
+
+function handlePatch(stageVariables, resourceDescriptor, patch, done) {
+    done(500);
+}
+
+function processResource(resource) {
+    return JSON.parse(resource);
 }

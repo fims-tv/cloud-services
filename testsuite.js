@@ -58,7 +58,7 @@ var all = {
         });
     },
 
-    // Insert new job
+    // Insert new job and retrieve it
     test3: function (callback) {
         console.log()
         console.log("=== Test 3 ===");
@@ -73,7 +73,7 @@ var all = {
                 hasRelatedResource: "http://urlToBMEssence"
             }
         }, function (error, response, body) {
-            checkResponse(error, response, body, 201, [], function (err) {
+            checkResponse(error, response, body, 201, [ "location" ], function (err) {
                 if (err) {
                     callback(err);
                 } else {
@@ -84,6 +84,41 @@ var all = {
                     }, function (error, response, body) {
                         checkResponse(error, response, body, 200, [], callback);
                     });
+                }
+            });
+        });
+    },
+
+    // Retrieve all jobs and delete them one by one
+    test4: function (callback) {
+        console.log()
+        console.log("=== Test 4 ===");
+
+        request({
+            url: testConfig[target].endpoint + "/Job",
+            method: "GET",
+            json: true
+        }, function (error, response, body) {
+            checkResponse(error, response, body, 200, [], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    var jobs = body;
+
+                    var idx = 0;
+                    async.whilst(
+                        function () { return idx < jobs.length; },
+                        function (callback) {
+                            request({
+                                url: testConfig[target].endpoint + "/Job/" + jobs[idx].id,
+                                method: "DELETE",
+                                json: true
+                            }, function (error, response, body) {
+                                checkResponse(error, response, body, 200, [], callback);
+                            });
+
+                            idx++;
+                        }, callback);
                 }
             });
         });

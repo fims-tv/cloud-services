@@ -3,7 +3,7 @@
 var docClient;
 
 module.exports = {
-    setup: function(AWS) {
+    setup: function (AWS) {
         if (!docClient) {
             docClient = new AWS.DynamoDB.DocumentClient();
         }
@@ -39,7 +39,7 @@ module.exports = {
             }
         };
 
-         docClient.get(params, function (err, data) {
+        docClient.get(params, function (err, data) {
             callback(err, data && data.Item && data.Item.resource ? data.Item.resource : null);
         });
     },
@@ -60,7 +60,17 @@ module.exports = {
         });
 
     },
-    del: function (type, id, callback) {
+    delete: function (tableName, type, id, callback) {
+        var params = {
+            TableName: tableName,
+            Key: {
+                "resource_type": type,
+                "resource_id": id,
+            }
+        };
 
+        docClient.delete(params, function (err, data) {
+            callback(err);
+        });
     }
 }
