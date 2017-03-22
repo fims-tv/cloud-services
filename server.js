@@ -31,12 +31,18 @@ http.createServer(function (request, response) {
 
         var requestUrl = url.parse(request.url, true, true);
 
+        var queryStringParameters = requestUrl.query;
+
+        if (Object.keys(queryStringParameters).length === 0) {
+            queryStringParameters = null;
+        }
+
         var event = {
             resource: "/{proxy+}",
             path: requestUrl.pathname,
             httpMethod: request.method,
             headers: request.headers,
-            queryStringParameters: requestUrl.query,
+            queryStringParameters: queryStringParameters,
             pathParameters: {
                 proxy: requestUrl.pathname.substring(1),
             },

@@ -36,6 +36,10 @@ var inputContext = {
     "hasRelatedResource": {
         "@id": "ebucore:hasRelatedResource",
         "@type": "@id"
+    },
+    "esc:votingRules": {
+        "@id": "esc:votingRules",
+        "@type": "xsd:string"
     }
 };
 
@@ -245,6 +249,45 @@ var all = {
             function (response, body, callback) {
                 testReport(response, body, "6b. POST of new Job", 201, callback);
             },
+        ], callback);
+    },
+
+    // Create new Job with embedded JobProfile and some non relevant metadata
+    test7: function (callback) {
+        var jobId;
+
+        async.waterfall([
+            function (callback) {
+                request({
+                    url: baseUrl + "/Job",
+                    method: "POST",
+                    json: true,
+                    body: {
+                        "@context": inputContext,
+                        type: "Job",
+                        hasJobProfile: {
+                            type: "JobProfile",
+                            label: "ExtractTechnicalMetadata"
+                        },
+                        hasRelatedResource: "http://urlToBMEssenceaaaaa",
+                        "esc:votingRules": "Raising hands, majority wins"
+                    }
+                }, callback);
+            },
+            function (response, body, callback) {
+                jobId = body.id;
+                testReport(response, body, "7a. POST of new Job with embedded JobProfile", 201, callback);
+            },
+            function (callback) {
+                request({
+                    url: jobId,
+                    method: "GET",
+                    json: true
+                }, callback);
+            },
+            function (response, body, callback) {
+                testReport(response, body, "7b. GET newly created job with embedded JobProfile", 200, callback);
+            }
         ], callback);
     },
 }

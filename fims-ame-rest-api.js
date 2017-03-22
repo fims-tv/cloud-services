@@ -31,7 +31,7 @@ exports.handler = (event, context, callback) => {
 
         callback(null, {
             statusCode: statusCode,
-            body: JSON.stringify(body),
+            body: JSON.stringify(body, null, 2),
             headers: headers
         });
     };
@@ -58,7 +58,7 @@ exports.handler = (event, context, callback) => {
             return;
     }
 
-    processResource(event.stageVariables, event.body, function (err, resource) {
+    processResource(event, event.body, function (err, resource) {
         if (err) {
             done(400)
         } else {
@@ -74,19 +74,16 @@ exports.handler = (event, context, callback) => {
 
             switch (event.httpMethod) {
                 case "GET":
-                    handleGet(event.stageVariables, resourceDescriptor, done);
+                    handleGet(event, resourceDescriptor, done);
                     break;
                 case "POST":
-                    handlePost(event.stageVariables, resourceDescriptor, resource, done);
+                    handlePost(event, resourceDescriptor, resource, done);
                     break;
                 case "PUT":
-                    handlePut(event.stageVariables, resourceDescriptor, resource, done);
+                    handlePut(event, resourceDescriptor, resource, done);
                     break;
                 case "DELETE":
-                    handleDelete(event.stageVariables, resourceDescriptor, done);
-                    break;
-                case "PATCH":
-                    handlePatch(event.stageVariables, resourceDescriptor, resource, done);
+                    handleDelete(event, resourceDescriptor, done);
                     break;
                 default:
                     done(501);
@@ -117,29 +114,33 @@ function parseResourceUrl(path) {
     return result;
 }
 
-function handleGet(stageVariables, resourceDescriptor, done) {
+function handleGet(event, resourceDescriptor, done) {
     if (resourceDescriptor.id) {
-        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+        repository.get(event.stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
             if (err) {
-                console.error("Unable to GET from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "' for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
+                console.error("Unable to GET from Table '" + event.stageVariables.TableName + "' for type '" + resourceDescriptor.type + "' for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                 done(404);
             } else {
-                renderResource(stageVariables, data, function (err, resource) {
-                    done(200, resource);
+                renderResource(event, data, function (err, resource) {
+                    if (err) {
+                        done(400, { error: "Failed to render response" })
+                    } else {
+                        done(200, resource);
+                    }
                 });
             }
         });
     } else {
-        repository.getAll(stageVariables.TableName, resourceDescriptor.type, function (err, data) {
+        repository.getAll(event.stageVariables.TableName, resourceDescriptor.type, function (err, data) {
             if (err) {
-                console.error("Unable to GET from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
+                console.error("Unable to GET from Table '" + event.stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
                 done(500);
             } else {
                 var idx = 0;
                 async.whilst(
                     () => idx < data.length,
                     callback => {
-                        renderResource(stageVariables, data[idx], function (err, resource) {
+                        renderResource(event, data[idx], function (err, resource) {
                             if (err) {
                                 callback(err);
                             } else {
@@ -151,7 +152,7 @@ function handleGet(stageVariables, resourceDescriptor, done) {
                     },
                     err => {
                         if (err) {
-                            done(500);
+                            done(400, { error: "Failed to render response" })
                         } else {
                             done(200, data);
                         }
@@ -161,9 +162,9 @@ function handleGet(stageVariables, resourceDescriptor, done) {
     }
 }
 
-function handlePost(stageVariables, resourceDescriptor, resource, done) {
+function handlePost(event, resourceDescriptor, resource, done) {
     if (resourceDescriptor.id) {
-        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+        repository.get(event.stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
             if (err) {
                 done(404);
             } else {
@@ -172,33 +173,51 @@ function handlePost(stageVariables, resourceDescriptor, resource, done) {
         });
     } else {
         resource.id = uuid.v4();
+        resource.dateCreated = new Date().toISOString();
+        resource.dateModified = resource.dateCreated;
 
-        repository.put(stageVariables.TableName, resource, function (err) {
+        switch (resourceDescriptor.type) {
+            case "Job":
+                resource.jobStatus = "NEW";
+                break;
+        }
+
+        repository.put(event.stageVariables.TableName, resource, function (err) {
             if (err) {
-                console.error("Unable to POST to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
+                console.error("Unable to POST to Table '" + event.stageVariables.TableName + "' for type '" + resourceDescriptor.type + "'. Error:", JSON.stringify(err, null, 2));
                 done(500);
             } else {
-                renderResource(stageVariables, resource, function (err, resource) {
-                    done(201, resource, { Location: resource.id });
+                renderResource(event, resource, function (err, resource) {
+                    if (err) {
+                        done(400, { error: "Failed to render response" })
+                    } else {
+                        done(201, resource, { Location: resource.id });
+                    }
                 });
             }
         });
     }
 }
 
-function handlePut(stageVariables, resourceDescriptor, resource, done) {
+function handlePut(event, resourceDescriptor, resource, done) {
     if (resourceDescriptor.id) {
-        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+        repository.get(event.stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
             if (err) {
                 done(404);
             } else {
-                repository.put(stageVariables.TableName, resource, function (err) {
+                resource.dateCreated = data.dateCreated;
+                resource.dateModified = new Date().toISOString();
+                repository.put(event.stageVariables.TableName, resource, function (err) {
                     if (err) {
-                        console.error("Unable to PUT to Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
+                        console.error("Unable to PUT to Table '" + event.stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                         done(500);
                     } else {
-                        renderResource(stageVariables, resource, function (err, resource) {
-                            done(200, resource);
+                        renderResource(event, resource, function (err, resource) {
+                            if (err) {
+                                done(400, { error: "Failed to render response" })
+                            } else {
+                                done(200, resource);
+                            }
                         });
                     }
                 });
@@ -209,19 +228,23 @@ function handlePut(stageVariables, resourceDescriptor, resource, done) {
     }
 }
 
-function handleDelete(stageVariables, resourceDescriptor, done) {
+function handleDelete(event, resourceDescriptor, done) {
     if (resourceDescriptor.id) {
-        repository.get(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
+        repository.get(event.stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err, data) {
             if (err) {
                 done(404);
             } else {
-                repository.delete(stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err) {
+                repository.delete(event.stageVariables.TableName, resourceDescriptor.type, resourceDescriptor.id, function (err) {
                     if (err) {
-                        console.error("Unable to DELETE from Table '" + stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
+                        console.error("Unable to DELETE from Table '" + event.stageVariables.TableName + "' for type '" + resourceDescriptor.type + " for id '" + resourceDescriptor.id + "'. Error JSON:", JSON.stringify(err, null, 2));
                         done(500);
                     } else {
-                        renderResource(stageVariables, data, function (err, resource) {
-                            done(200, resource);
+                        renderResource(event, data, function (err, resource) {
+                            if (err) {
+                                done(400, { error: "Failed to render response" })
+                            } else {
+                                done(200, resource);
+                            }
                         });
                     }
                 });
@@ -232,55 +255,56 @@ function handleDelete(stageVariables, resourceDescriptor, done) {
     }
 }
 
-function handlePatch(stageVariables, resourceDescriptor, patch, done) {
-    done(501);
-}
-
-
-
-function processResource(stageVariables, input, callback) {
+function processResource(event, input, callback) {
     if (input) {
         var resource = JSON.parse(input);
 
-        console.log(JSON.stringify(resource, null, 2));
-
         if (resource.id) {
-            resource.id = resource.id.replace(stageVariables.PublicUrl + "/" + resource.type + "/", "");
+            resource.id = resource.id.replace(event.stageVariables.PublicUrl + "/" + resource.type + "/", "");
         }
 
         for (var prop in resource) {
-            if (typeof resource[prop] === "string" && resource[prop].indexOf(stageVariables.PublicUrl) >= 0) {
-                resource[prop] = resource[prop].replace(stageVariables.PublicUrl, INTERNAL);
+            if (typeof resource[prop] === "string" && resource[prop].indexOf(event.stageVariables.PublicUrl) >= 0) {
+                resource[prop] = resource[prop].replace(event.stageVariables.PublicUrl, INTERNAL);
             }
         }
 
-        jsonld.compact(resource, INTERNAL + "/context/default", function (err, data) {
-
+        jsonld.compact(resource, INTERNAL + "/context/default", function (err, resource) {
             if (err) {
                 console.error(JSON.stringify(err, null, 2));
-            } else {
-                console.log("--------------------------------")
-                console.log(JSON.stringify(data, null, 2));
             }
 
-            callback(err, data);
+            callback(err, resource);
         });
     } else {
         callback();
     }
 }
 
-function renderResource(stageVariables, resource, callback) {
+function renderResource(event, resource, callback) {
     if (resource) {
-        resource.id = stageVariables.PublicUrl + "/" + resource.type + "/" + resource.id;
+        resource.id = event.stageVariables.PublicUrl + "/" + resource.type + "/" + resource.id;
 
         for (var prop in resource) {
-            if (resource[prop].indexOf(INTERNAL) >= 0) {
-                resource[prop] = resource[prop].replace(INTERNAL, stageVariables.PublicUrl);
+            if (typeof resource[prop] === "string" && resource[prop].indexOf(INTERNAL) >= 0) {
+                resource[prop] = resource[prop].replace(INTERNAL, event.stageVariables.PublicUrl);
             }
         }
+
+        if (event.queryStringParameters && event.queryStringParameters.context) {
+            jsonld.compact(resource, event.queryStringParameters.context, function (err, resource) {
+                if (err) {
+                    console.error(JSON.stringify(err, null, 2));
+                }
+
+                callback(err, resource);
+            });
+        } else {
+            callback(null, resource);
+        }
+    } else {
+        callback();
     }
-    callback(null, resource);
 }
 
 var CONTEXTS = {};
@@ -291,7 +315,6 @@ CONTEXTS[INTERNAL + "/context/default"] = {
         "default": "urn:ebu:metadata-schema:ebuCore_2012",
         "ebu": "http://ebu.org/nar-extensions/",
         "ebucore": "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#",
-        "esc": "http://www.eurovision.com#",
         "fims": "http://fims.tv#",
         "owl": "http://www.w3.org/2002/07/owl#",
         "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -310,6 +333,10 @@ CONTEXTS[INTERNAL + "/context/default"] = {
         "id": "@id",
         "type": "@type",
         "label": "rdfs:label",
+        "jobStatus": {
+            "@id": "ebucore:jobStatus",
+            "@type": "xsd:string"
+        },
         "Job": "ebucore:Job",
         "JobProfile": "ebucore:JobProfile",
         "hasJobProfile": {
