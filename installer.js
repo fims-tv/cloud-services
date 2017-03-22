@@ -114,10 +114,10 @@ function undeployDynamo(callback) {
     ], callback);
 }
 
-function deployDynamoLocal(callback) {
+function configDynamoLocal(callback) {
     var testConfig = configuration.testConfig();
     dynamodb.endpoint = new AWS.Endpoint(testConfig.local.dynamodb);
-    deployDynamo(callback);
+    callback();
 }
 
 //////////////////////////////
@@ -297,6 +297,7 @@ function createFimsAmeApiPackage(callback) {
 
     archive.file("fims-ame-rest-api.js");
     archive.file("fims-ame-repository.js");
+    archive.directory("node_modules/async/");
     archive.directory("node_modules/jsonld/");
     archive.directory("node_modules/uuid/");
     archive.finalize();
@@ -427,9 +428,9 @@ function undeployLambda(callback) {
     ], callback);
 }
 
-function updateFimsAmeApiCode(callback) {
+function updateLambdaCode(callback) {
     console.log();
-    console.log("=== updateFimsAmeApiCode ===");
+    console.log("=== updateLambdaCode ===");
     async.waterfall([
         createFimsAmeApiPackage,
         updateFimsAmeApiLambdaFunction
@@ -736,11 +737,16 @@ switch (command) {
         functions.push(undeployLambda);
         functions.push(undeployDynamo);
         break;
-    case "updateFimsAmeApiCode":
-        functions.push(updateFimsAmeApiCode);
+    case "updateLambdaCode":
+        functions.push(updateLambdaCode);
         break;
     case "deployLocal":
-        functions.push(deployDynamoLocal);
+        functions.push(configDynamoLocal);
+        functions.push(deployDynamo);
+        break;
+    case "undeployLocal":
+        functions.push(configDynamoLocal);
+        functions.push(undeployDynamo);
         break;
 }
 
