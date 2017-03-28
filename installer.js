@@ -299,6 +299,7 @@ function createFimsAmeApiPackage(callback) {
     archive.file("fims-ame-repository.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/jsonld/");
+    archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
     archive.finalize();
 }
