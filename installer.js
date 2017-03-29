@@ -17,6 +17,7 @@ var configuration = require("./configuration.js");
 var CREDENTIALS_FILE = "./credentials.json";
 
 var FIMS_AME_API_PACKAGE_FILE = "./build/fims-ame-api-package.zip";
+var FIMS_AME_PROCESSOR_PACKAGE_FILE = "./build/fims-ame-processor-package.zip";
 
 //////////////////////////////
 //       AWS Services       //
@@ -35,10 +36,13 @@ var dynamodb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 var iam = new AWS.IAM({ apiVersion: "2010-05-08" });
 var lambda = new AWS.Lambda({ apiVersion: "2015-03-31" });
 var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
+var dynamodbstreams = new AWS.DynamoDBStreams({ apiVersion: '2012-08-10' });
 
 //////////////////////////////
 //          Dynamo          //
 //////////////////////////////
+
+var dynamoTable;
 
 function deployDynamo(callback) {
     console.log();
@@ -51,7 +55,11 @@ function deployDynamo(callback) {
         function (data, callback) {
             if (data.TableNames.indexOf(config.tableName) >= 0) {
                 console.log("Found table '" + config.tableName + "'");
-                callback();
+                dynamodb.describeTable({ TableName: config.tableName }, function (err, data) {
+                    dynamoTable = data.Table;
+                    callback(err);
+                });
+
             } else {
                 console.log("Creating table '" + config.tableName + "'");
                 var params = {
@@ -79,9 +87,14 @@ function deployDynamo(callback) {
                         ReadCapacityUnits: 5,
                         WriteCapacityUnits: 5
                     },
-                    TableName: config.tableName
+                    TableName: config.tableName,
+                    StreamSpecification: {
+                        StreamEnabled: true,
+                        StreamViewType: "KEYS_ONLY"
+                    }
                 };
                 dynamodb.createTable(params, function (err, data) {
+                    dynamoTable = data.TableDescription;
                     callback(err)
                 });
             }
@@ -274,7 +287,8 @@ function deleteLambdaExecutionRole(callback) {
 //          Lambda          //
 //////////////////////////////
 
-var lambdaFunction;
+var lambdaProcessorFunction;
+var lambdaApiFunction;
 
 function createFimsAmeApiPackage(callback) {
     if (!fs.existsSync("./build")) {
@@ -325,7 +339,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaFunction = data;
+                    lambdaApiFunction = data;
                     callback(err);
                 });
             } else {
@@ -344,7 +358,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Timeout: 3
                 };
                 lambda.createFunction(params, function (err, data) {
-                    lambdaFunction = data;
+                    lambdaApiFunction = data;
                     callback(err);
                 });
             }
@@ -400,11 +414,147 @@ function updateFimsAmeApiLambdaFunction(callback) {
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaFunction = data;
+                    lambdaApiFunction = data;
                     callback(err);
                 });
             } else {
                 callback("Not found function '" + config.lambdaApiFunctionName + "'");
+            }
+        }
+    ], callback);
+}
+
+function createFimsAmeProcessorPackage(callback) {
+    if (!fs.existsSync("./build")) {
+        fs.mkdirSync("./build");
+    }
+
+    var output = fs.createWriteStream(FIMS_AME_PROCESSOR_PACKAGE_FILE);
+    var archive = archiver("zip", { zlib: { level: 9 } });
+
+    output.on("close", function () {
+        console.log("Created '" + FIMS_AME_PROCESSOR_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
+        callback();
+    });
+
+    archive.on("error", function (err) {
+        callback(err);
+    });
+
+    archive.pipe(output);
+    archive.file("fims-ame-processor.js");
+    archive.file("fims-ame-repository.js");
+    archive.file("externals/mediainfo/0.7.93.x86_64.RHEL_7/mediainfo", { name: "bin/mediainfo", mode: 0755 });
+    archive.directory("externals/libmediainfo/0.7.93.x86_64.RHEL_7/", "lib");
+    archive.directory("externals/libzen/0.4.34.x86_64.RHEL_7/", "lib");
+    archive.directory("node_modules/async/");
+    archive.directory("node_modules/jsonld/");
+    archive.directory("node_modules/request/");
+    archive.directory("node_modules/uuid/");
+    archive.finalize();
+}
+
+function createFimsAmeProcessorLambdaFunction(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            lambda.listFunctions(callback);
+        },
+        function (data, callback) {
+            var func = null;
+            data.Functions.forEach(f => {
+                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                    func = f;
+                }
+            });
+            if (func) {
+                console.log("Updating code of function '" + config.lambdaProcessorFunctionName + "'");
+                var params = {
+                    ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE),
+                    FunctionName: config.lambdaProcessorFunctionName,
+                    Publish: true
+                }
+                lambda.updateFunctionCode(params, function (err, data) {
+                    lambdaProcessorFunction = data;
+                    callback(err);
+                });
+            } else {
+                console.log("Creating function '" + config.lambdaProcessorFunctionName + "'");
+                var params = {
+                    Code: {
+                        ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE)
+                    },
+                    FunctionName: config.lambdaProcessorFunctionName,
+                    Handler: "fims-ame-processor.handler",
+                    Role: lambdaExecutionRole.Arn,
+                    Runtime: "nodejs4.3",
+                    Description: "",
+                    MemorySize: 512,
+                    Publish: true,
+                    Timeout: 30
+                };
+                lambda.createFunction(params, function (err, data) {
+                    lambdaProcessorFunction = data;
+                    callback(err);
+                });
+            }
+        }
+    ], callback);
+}
+
+function deleteFimsAmeProcessorLambdaFunction(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            lambda.listFunctions(callback);
+        },
+        function (data, callback) {
+            var func = null;
+            data.Functions.forEach(f => {
+                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                    func = f;
+                }
+            });
+            if (func) {
+                console.log("Deleting function '" + config.lambdaProcessorFunctionName + "'");
+                var params = { FunctionName: config.lambdaProcessorFunctionName };
+                lambda.deleteFunction(params, function (err, data) {
+                    callback(err)
+                });
+            } else {
+                console.log("Function '" + config.lambdaProcessorFunctionName + "' not found");
+                callback();
+            }
+        }
+    ], callback);
+}
+
+function updateFimsAmeProcessorLambdaFunction(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            lambda.listFunctions(callback);
+        },
+        function (data, callback) {
+            var func = null;
+            data.Functions.forEach(f => {
+                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                    func = f;
+                }
+            });
+            if (func) {
+                console.log("Updating code of function '" + config.lambdaProcessorFunctionName + "'");
+                var params = {
+                    ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE),
+                    FunctionName: config.lambdaProcessorFunctionName,
+                    Publish: true
+                }
+                lambda.updateFunctionCode(params, function (err, data) {
+                    lambdaProcessorFunction = data;
+                    callback(err);
+                });
+            } else {
+                callback("Not found function '" + config.lambdaProcessorFunctionName + "'");
             }
         }
     ], callback);
@@ -417,6 +567,8 @@ function deployLambda(callback) {
         createLambdaExecutionRole,
         createFimsAmeApiPackage,
         createFimsAmeApiLambdaFunction,
+        createFimsAmeProcessorPackage,
+        createFimsAmeProcessorLambdaFunction
     ], callback);
 }
 
@@ -424,6 +576,7 @@ function undeployLambda(callback) {
     console.log();
     console.log("=== undeployLambda ===");
     async.waterfall([
+        deleteFimsAmeProcessorLambdaFunction,
         deleteFimsAmeApiLambdaFunction,
         deleteLambdaExecutionRole
     ], callback);
@@ -434,7 +587,9 @@ function updateLambdaCode(callback) {
     console.log("=== updateLambdaCode ===");
     async.waterfall([
         createFimsAmeApiPackage,
-        updateFimsAmeApiLambdaFunction
+        updateFimsAmeApiLambdaFunction,
+        createFimsAmeProcessorPackage,
+        updateFimsAmeProcessorLambdaFunction
     ], callback);
 }
 
@@ -447,12 +602,12 @@ function createRestAPI(callback) {
     var proxyResource;
     var proxyResourceAnyMethod;
 
-    var lambdaFunctionArn = lambdaFunction.FunctionArn.substring(0, lambdaFunction.FunctionArn.indexOf(config.lambdaApiFunctionName) + config.lambdaApiFunctionName.length)
-    var lambdaFunctionRegion = lambdaFunctionArn.substring(15, lambdaFunctionArn.indexOf(":", 16));
-    var lambdaFunctionAccountId = lambdaFunctionArn.substring(15 + lambdaFunctionRegion.length + 1, lambdaFunctionArn.indexOf(":", 15 + lambdaFunctionRegion.length + 2));
+    var lambdaApiFunctionArn = lambdaApiFunction.FunctionArn.substring(0, lambdaApiFunction.FunctionArn.indexOf(config.lambdaApiFunctionName) + config.lambdaApiFunctionName.length)
+    var lambdaApiFunctionRegion = lambdaApiFunctionArn.substring(15, lambdaApiFunctionArn.indexOf(":", 16));
+    var lambdaApiFunctionAccountId = lambdaApiFunctionArn.substring(15 + lambdaApiFunctionRegion.length + 1, lambdaApiFunctionArn.indexOf(":", 15 + lambdaApiFunctionRegion.length + 2));
 
-    var lambdaFunctionIntegrationArn = "arn:aws:apigateway:" + lambdaFunctionRegion + ":lambda:path/2015-03-31/functions/" + lambdaFunctionArn + "/invocations";
-    var restApiExecutionArn = "arn:aws:execute-api:" + lambdaFunctionRegion + ":" + lambdaFunctionAccountId + ":";
+    var lambdaApiFunctionIntegrationArn = "arn:aws:apigateway:" + lambdaApiFunctionRegion + ":lambda:path/2015-03-31/functions/" + lambdaApiFunctionArn + "/invocations";
+    var restApiExecutionArn = "arn:aws:execute-api:" + lambdaApiFunctionRegion + ":" + lambdaApiFunctionAccountId + ":";
 
     async.waterfall([
         function (callback) {
@@ -574,7 +729,7 @@ function createRestAPI(callback) {
                     contentHandling: 'CONVERT_TO_TEXT',
                     integrationHttpMethod: 'POST',
                     passthroughBehavior: 'WHEN_NO_MATCH',
-                    uri: lambdaFunctionIntegrationArn
+                    uri: lambdaApiFunctionIntegrationArn
                 };
                 apigateway.putIntegration(params, function (err, data) {
                     callback(err);
@@ -597,7 +752,7 @@ function createRestAPI(callback) {
                     policy.Statement.forEach(st => {
                         if (st.Action === "lambda:InvokeFunction" &&
                             st.Principal.Service === "apigateway.amazonaws.com" &&
-                            st.Resource === lambdaFunctionArn &&
+                            st.Resource === lambdaApiFunctionArn &&
                             st.Condition.ArnLike["AWS:SourceArn"] === restApiExecutionArn) {
                             policyPresent = true;
                         }
@@ -650,7 +805,7 @@ function createRestAPI(callback) {
                     stageName: config.restApiStageName,
                     variables: {
                         TableName: config.tableName,
-                        PublicUrl: "https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName
+                        PublicUrl: "https://" + restApi.id + ".execute-api." + lambdaApiFunctionRegion + ".amazonaws.com/" + config.restApiStageName
                     }
                 };
                 apigateway.createDeployment(params, function (err, data) {
@@ -659,7 +814,7 @@ function createRestAPI(callback) {
 
             }
         }, function (callback) {
-            console.log("AWS endpoint: \"https://" + restApi.id + ".execute-api." + lambdaFunctionRegion + ".amazonaws.com/" + config.restApiStageName + "\"");
+            console.log("AWS endpoint: \"https://" + restApi.id + ".execute-api." + lambdaApiFunctionRegion + ".amazonaws.com/" + config.restApiStageName + "\"");
             callback();
         }
 
@@ -714,6 +869,43 @@ function undeployGateway(callback) {
 }
 
 //////////////////////////////
+//      Dynamo Trigger      //
+//////////////////////////////
+
+function deployDynamoTrigger(callback) {
+    async.waterfall([
+        function (callback) {
+            console.log(dynamoTable);
+            console.log("Searching for Dynamo Trigger");
+            var params = {
+                EventSourceArn: dynamoTable.LatestStreamArn,
+                FunctionName: config.lambdaProcessorFunctionName
+            };
+            lambda.listEventSourceMappings(params, callback);
+        },
+        function (data, callback) {
+            if (data.EventSourceMappings.length> 0) {
+                console.log("Found Dynamo Trigger");
+                callback();
+            } else {
+                console.log("Creating Dynamo Trigger");
+                var params = {
+                    EventSourceArn: dynamoTable.LatestStreamArn,
+                    FunctionName: config.lambdaProcessorFunctionName,
+                    StartingPosition: "LATEST",
+                    BatchSize: 1,
+                    Enabled: true
+                }
+                console.log(params);
+                lambda.createEventSourceMapping(params, function (err, data) {
+                    callback(err);
+                });
+            }
+        },
+    ], callback);
+}
+
+//////////////////////////////
 //         Installer        //
 //////////////////////////////
 console.log("Starting");
@@ -731,6 +923,7 @@ switch (command) {
     case "deploy":
         functions.push(deployDynamo);
         functions.push(deployLambda);
+        functions.push(deployDynamoTrigger);
         functions.push(deployGateway);
         break;
     case "undeploy":

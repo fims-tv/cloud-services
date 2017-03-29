@@ -20,6 +20,7 @@ module.exports = {
             console.error("  \"tableName\": \"fims-ame\",");
             console.error("  \"lambdaExecutionRoleName\": \"fims-ame-lambda-execution-role\",");
             console.error("  \"lambdaApiFunctionName\": \"fims-ame-api-lambda-function\",");
+            console.error("  \"lambdaProcessorFunctionName\": \"fims-ame-processor-lambda-function\",");
             console.error("  \"restApiName\": \"fims-ame-rest-api\",");
             console.error("  \"restApiStageName\": \"test\"");
             console.error("}");

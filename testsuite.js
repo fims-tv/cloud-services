@@ -27,15 +27,50 @@ var inputContext = {
     "id": "@id",
     "type": "@type",
     "label": "rdfs:label",
+    "jobStatus": {
+        "@id": "ebucore:jobStatus",
+        "@type": "xsd:string"
+    },
     "Job": "ebucore:Job",
-    "JobProfile": "ebucore:JobProfile",
-    "hasJobProfile": {
-        "@id": "ebucore:hasJobProfile",
+    "job": {
+        "@id": "ebucore:job",
         "@type": "@id"
     },
+    "JobProfile": "ebucore:JobProfile",
+    "jobProfile": {
+        "@id": "ebucore:jobProfile",
+        "@type": "@id"
+    },
+    "BMEssence": "ebucore:BMEssence",
     "hasRelatedResource": {
         "@id": "ebucore:hasRelatedResource",
         "@type": "@id"
+    },
+    "locator": {
+        "@id": "ebucore:locator",
+        "@type": "xsd:anyURI"
+    },
+    "StartJob": "ebucore:StartJob",
+    "startJob": {
+        "@id": "ebucore:startJob",
+        "@type": "@id"
+    },
+    "priority": {
+        "@id": "ebucore:JobPriority",
+        "@type": "xsd:string"
+    },
+    "StopJob": "ebucore:StopJob",
+    "stopJob": {
+        "@id": "ebucore:stopJob",
+        "@type": "@id"
+    },
+    "stopJobCause": {
+        "@id": "ebucore:stopJobCause",
+        "@type": "xsd:string"
+    },
+    "stopJobError": {
+        "@id": "ebucore:stopJobError",
+        "@type": "xsd:string"
     },
     "esc:votingRules": {
         "@id": "esc:votingRules",
@@ -112,7 +147,7 @@ var all = {
                     body: {
                         "@context": inputContext,
                         type: "Job",
-                        hasJobProfile: "http://urltoProfile",
+                        jobProfile: "http://urltoProfile",
                         hasRelatedResource: "http://urlToBMEssence"
                     }
                 }, callback);
@@ -188,7 +223,7 @@ var all = {
                     body: {
                         "@context": inputContext,
                         type: "Job",
-                        hasJobProfile: "http://urltoProfile",
+                        jobProfile: "http://urltoProfile",
                         hasRelatedResource: "http://urlToBMEssence"
                     }
                 }, callback);
@@ -198,7 +233,7 @@ var all = {
                 testReport(response, body, "5a. POST of new Job", 201, callback);
             },
             function (callback) {
-                job.hasJobProfile = "http://anotherProfile";
+                job.jobProfile = "http://anotherProfile";
                 request({
                     url: job.id,
                     method: "PUT",
@@ -241,7 +276,7 @@ var all = {
                     body: {
                         "@context": inputContext,
                         type: "Job",
-                        hasJobProfile: jobProfileId,
+                        jobProfile: jobProfileId,
                         hasRelatedResource: "http://urlToBMEssenceaaaaa"
                     }
                 }, callback);
@@ -265,12 +300,17 @@ var all = {
                     body: {
                         "@context": inputContext,
                         type: "Job",
-                        hasJobProfile: {
+                        startJob: {
+                            priority: "MEDIUM"
+                        },
+                        jobProfile: {
                             type: "JobProfile",
                             label: "ExtractTechnicalMetadata"
                         },
-                        hasRelatedResource: "http://urlToBMEssenceaaaaa",
-                        "esc:votingRules": "Raising hands, majority wins"
+                        hasRelatedResource: {
+                            type: "BMEssence",
+                            locator: "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
+                        }
                     }
                 }, callback);
             },
