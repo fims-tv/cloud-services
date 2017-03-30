@@ -20,6 +20,7 @@ exports.handler = (event, context, callback) => {
     const done = function (statusCode, body, additionalHeaders) {
         var headers = {
             "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
         }
 
         if (additionalHeaders) {
