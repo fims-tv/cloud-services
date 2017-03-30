@@ -94,6 +94,10 @@ function del(tableName, type, id, callback) {
 }
 
 function resolve(tableName, obj, propertyName, callback) {
+    if (!obj) {
+        return callback("Object passed to function is undefined");
+    }
+
     var property = obj[propertyName];
 
     if (property === undefined) {

@@ -58,6 +58,10 @@ exports.handler = (event, context, callback) => {
                 function (resource, callback) {
                     console.log(JSON.stringify(resource, null, 2));
                     job = resource;
+                    if (!job) {
+                        return callback("Related Job not found");
+                    } 
+
                     job.jobStatus = "RUNNING";
                     console.log("Updating job '" + job.id + "' to state '" + job.jobStatus + "'");
                     repository.put(tableName, job, callback);
@@ -124,7 +128,8 @@ exports.handler = (event, context, callback) => {
                     xml2js.parseString(mediainfoOutput, { explicitArray: false, async: true }, callback);
                 },
                 function (result, callback) {
-                    console.log("Extracting metadata");
+                    console.log("Extracting metadata from: ");
+                    console.log(JSON.stringify(result, null, 2));
 
                     report = {
                         "@context": constants.DEFAULT_CONTEXT,
@@ -208,7 +213,10 @@ exports.handler = (event, context, callback) => {
             return callback();
         }
     }, function (err) {
-        callback(err);
+        if (err) {
+            console.error(err);
+        }
+        callback();
     });
 };
 
