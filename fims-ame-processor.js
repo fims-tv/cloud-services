@@ -9,6 +9,7 @@ var path = require("path");
 
 var async = require("async");
 var uuid = require("uuid");
+var constants = require("./constants.js");
 var repository = require("./fims-ame-repository.js");
 
 process.env["PATH"] = process.env["PATH"] + ":" + process.env["LAMBDA_TASK_ROOT"] + "/bin";
@@ -117,10 +118,21 @@ exports.handler = (event, context, callback) => {
                 }
             ], function (processError) {
                 if (job) {
+                    var stopJob = {
+                        id: uuid.v4(),
+                        type: "StopJob",
+                        job: constants.INTERNAL + "/Job/" + job.id
+                    }
+
+                    job.stopJob = constants.INTERNAL + "/StopJob/" + stopJob.id;
+
                     if (processError) {
                         job.jobStatus = "FAILED";
+                        stopJob.stopJobCause = "ERROR";
+                        stopJob.stopJobError = JSON.stringify(processError)
                     } else {
                         job.jobStatus = "COMPLETED";
+                        stopJob.stopJobCause = "COMPLETED";
                     }
 
                     console.log("Updating job '" + job.id + "' to state '" + job.jobStatus + "'");
@@ -128,7 +140,14 @@ exports.handler = (event, context, callback) => {
                         if (putError) {
                             return callback(putError);
                         }
-                        return callback(processError);
+
+                        repository.put(tableName, stopJob, function (putError) {
+                            if (putError) {
+                                return callback(putError);
+                            }
+
+                            return callback(processError);
+                        });
                     });
                 } else {
                     return callback(processError);

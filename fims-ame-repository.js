@@ -1,6 +1,6 @@
 //"use strict";
 
-const INTERNAL = "###INTERNAL###";
+var constants = require("./constants.js");
 
 var docClient;
 
@@ -43,7 +43,13 @@ function get(tableName, type, id, callback) {
     };
 
     docClient.get(params, function (err, data) {
-        callback(err, data && data.Item && data.Item.resource ? data.Item.resource : null);
+        var resource = data && data.Item && data.Item.resource ? data.Item.resource : null;
+        if (!resource) {
+            console.error("Empty resource detected");
+            console.error("Error: " + JSON.stringify(err));
+            console.error("Data: " + JSON.stringify(data));
+        }
+        callback(err, resource);
     });
 }
 
@@ -98,7 +104,7 @@ function resolve(tableName, obj, propertyName, callback) {
 
     switch (propertyType) {
         case "string":
-            if (property.startsWith(INTERNAL)) {
+            if (property.startsWith(constants.INTERNAL)) {
                 var parts = property.split("/");
                 if (parts.length !== 3) {
                     return callback("Failed to parse internal url: '" + property + "'");

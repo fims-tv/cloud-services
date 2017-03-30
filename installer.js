@@ -309,6 +309,7 @@ function createFimsAmeApiPackage(callback) {
 
     archive.pipe(output);
 
+    archive.file("constants.js");
     archive.file("fims-ame-rest-api.js");
     archive.file("fims-ame-repository.js");
     archive.directory("node_modules/async/");
@@ -442,6 +443,8 @@ function createFimsAmeProcessorPackage(callback) {
     });
 
     archive.pipe(output);
+
+    archive.file("constants.js");
     archive.file("fims-ame-processor.js");
     archive.file("fims-ame-repository.js");
     archive.file("externals/mediainfo/0.7.93.x86_64.RHEL_7/mediainfo", { name: "bin/mediainfo", mode: 0755 });
@@ -875,7 +878,6 @@ function undeployGateway(callback) {
 function deployDynamoTrigger(callback) {
     async.waterfall([
         function (callback) {
-            console.log(dynamoTable);
             console.log("Searching for Dynamo Trigger");
             var params = {
                 EventSourceArn: dynamoTable.LatestStreamArn,
@@ -884,7 +886,7 @@ function deployDynamoTrigger(callback) {
             lambda.listEventSourceMappings(params, callback);
         },
         function (data, callback) {
-            if (data.EventSourceMappings.length> 0) {
+            if (data.EventSourceMappings.length > 0) {
                 console.log("Found Dynamo Trigger");
                 callback();
             } else {
