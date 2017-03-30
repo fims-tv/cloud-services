@@ -9,6 +9,8 @@ var path = require("path");
 
 var async = require("async");
 var uuid = require("uuid");
+var xml2js = require("xml2js");
+
 var constants = require("./constants.js");
 var repository = require("./fims-ame-repository.js");
 
@@ -40,6 +42,7 @@ exports.handler = (event, context, callback) => {
             var bmEssence;
             var filename;
             var mediainfoOutput;
+            var report;
 
             async.waterfall([
                 function (callback) {
@@ -115,10 +118,58 @@ exports.handler = (event, context, callback) => {
                 function (callback) {
                     console.log("Deleting file '" + filename + "'");
                     fs.unlink(filename, callback);
+                },
+                function (callback) {
+                    console.log("Processing xml");
+                    xml2js.parseString(mediainfoOutput, { explicitArray: false, async: true }, callback);
+                },
+                function (result, callback) {
+                    console.log("Extracting metadata");
+
+                    report = {
+                        "@context": constants.DEFAULT_CONTEXT,
+                        id: uuid.v4(),
+                        type: "Report",
+                        job: constants.INTERNAL + "/Job/" + job.id,
+                        technicalMetadata: {
+                            type: "TechnicalMetadata"
+                        }
+                    }
+
+                    var videoFormatName = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/$/videoFormatName");
+                    var videoFrameWidth = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:width/_");
+                    var videoFrameWidthUnit = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:width/$/unit");
+                    var videoFrameHeight = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:height/_");
+                    var videoFrameHeightUnit = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:height/$/unit");
+                    var videoFrameRate = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:frameRate/_");
+                    var videoEncoding = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:videoEncoding/$/typeLabel");
+                    var videoEncodingProfile;
+                    var videoEncodingLevel;
+                    if (videoEncoding) {
+                        var parts = videoEncoding.split("@");
+                        if (parts.length === 2) {
+                            videoEncodingProfile = parts[0];
+                            videoEncodingLevel = parts[1];
+                        }
+                    }
+
+                    addToReport(report, "ebucore:hasVideoEncodingFormat", videoFormatName);
+                    addToReport(report, "ebucore:videoEncodingProfile", videoEncodingProfile);
+                    addToReport(report, "ebucore:videoEncodingLevel", videoEncodingLevel);
+                    addToReport(report, "ebucore:frameWidth", videoFrameWidth);
+                    addToReport(report, "ebucore:frameWidthUnit", videoFrameWidthUnit);
+                    addToReport(report, "ebucore:frameHeight", videoFrameHeight);
+                    addToReport(report, "ebucore:frameHeightUnit", videoFrameHeightUnit);
+                    addToReport(report, "ebucore:frameRate", videoFrameRate);
+
+                    job.report = constants.INTERNAL + "/Report/" + report.id;
+
+                    repository.put(tableName, report, callback);
                 }
             ], function (processError) {
                 if (job) {
                     var stopJob = {
+                        "@context": constants.DEFAULT_CONTEXT,
                         id: uuid.v4(),
                         type: "StopJob",
                         job: constants.INTERNAL + "/Job/" + job.id
@@ -160,3 +211,20 @@ exports.handler = (event, context, callback) => {
         callback(err);
     });
 };
+
+function extractMetadata(obj, path, defaultValue) {
+    var parts = path.split("/");
+    for (var i = 0; i < parts.length; i++) {
+        obj = obj[parts[i]];
+        if (obj === undefined) {
+            return defaultValue;
+        }
+    }
+    return obj;
+}
+
+function addToReport(report, propertyName, value) {
+    if (value !== undefined) {
+        report.technicalMetadata[propertyName] = value;
+    }
+}

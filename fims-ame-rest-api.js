@@ -167,6 +167,7 @@ function handlePost(event, resourceDescriptor, resource, done) {
                         resource.jobStatus = "NEW";
 
                         var startJob = {
+                            "@context": constants.DEFAULT_CONTEXT,
                             id: uuid.v4(),
                             type: "StartJob",
                             job: constants.INTERNAL + "/Job/" + resource.id

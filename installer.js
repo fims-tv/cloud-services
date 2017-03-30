@@ -454,6 +454,7 @@ function createFimsAmeProcessorPackage(callback) {
     archive.directory("node_modules/jsonld/");
     archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
+    archive.directory("node_modules/xml2js/");
     archive.finalize();
 }
 

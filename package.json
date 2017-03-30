@@ -1,7 +1,7 @@
 {
   "name": "aws-ame-service",
   "version": "0.0.1",
-  "description": "FIMS 2.0 AME Service for AWS levering MediaInfo",
+  "description": "FIMS 2.0 AME Service for AWS leveraging MediaInfo",
   "author": "Joost Rovers <joost.rovers@glookast.com>",
   "engines": {
     "node": "~4.3.2"
@@ -19,7 +19,8 @@
     "dynamodb-doc": "^1.0.0",
     "jsonld": "^0.4.11",
     "request": "^2.81.0",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "xml2js": "^0.4.17"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-ame-service/issues"

@@ -71,6 +71,52 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@id": "ebucore:stopJobError",
             "@type": "xsd:string"
         },
+        "Report": "ebucore:Report",
+        "report": {
+            "@id": "ebucore:Report",
+            "@type": "@id"
+        },
+        "TechnicalMetadata": "ebucore:TecnicalMetadata",
+        "technicalMetadata": {
+            "@id": "ebucore:TecnicalMetadata",
+            "@type": "@id"
+        },
+        "ebucore:hasContainerFormat": {
+            "@id": "ebucore:hasContainerFormat",
+            "@type": "xsd:string"
+        },
+        "ebucore:hasVideoEncodingFormat": {
+            "@id": "ebucore:hasVideoEncodingFormat",
+            "@type": "xsd:string"
+        },
+        "ebucore:videoEncodingLevel": {
+            "@id": "ebucore:videoEncodingLevel",
+            "@type": "xsd:string"
+        },
+        "ebucore:videoEncodingProfile": {
+            "@id": "ebucore:videoEncodingProfile",
+            "@type": "xsd:string"
+        },
+        "ebucore:frameHeightUnit": {
+            "@id": "ebucore:frameHeightUnit",
+            "@type": "xsd:string"
+        },
+        "ebucore:frameHeight": {
+            "@id": "ebucore:frameHeight",
+            "@type": "xsd:integer"
+        },
+        "ebucore:frameWidthUnit": {
+            "@id": "ebucore:frameWidthUnit",
+            "@type": "xsd:string"
+        },
+        "ebucore:frameWidth": {
+            "@id": "ebucore:frameWidth",
+            "@type": "xsd:integer"
+        },
+        "ebucore:frameRate": {
+            "@id": "ebucore:frameRate",
+            "@type": "xsd:string"
+        },
     }
 };
 
