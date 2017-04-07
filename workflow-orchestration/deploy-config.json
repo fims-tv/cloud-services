@@ -1,0 +1,6 @@
+{
+  "workflowExecutionRoleName": "fims-ame-workflow-execution-role",
+  "stepFunctionStateMachine": "fims-demo-SM3",
+  "workflowStateMachineFileName": "fims-state-machine.json",
+  "jobProcessorApiGatewayName": "fims-job-repo2"
+}

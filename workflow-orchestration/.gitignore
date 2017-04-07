@@ -1,0 +1,6 @@
+node_modules
+credentials.json
+.vscode
+build
+//deploy-config.json
+test-config.json
