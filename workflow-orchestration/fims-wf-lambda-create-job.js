@@ -40,7 +40,8 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
 
 } else {
     exports.handler = (event, context, callback) => {
-        createJob(callback);
+        console.log("event.payload = " + JSON.stringify(event.payload)); 
+        createJob(callback);           
     }
 }
 
@@ -66,9 +67,11 @@ function hitGet(url) {
     });
 }
 
-function hitPost(url) {
+// https://github.com/fims-tv/aws-services/blob/develop/README.md#payload-messages
+function hitPost(callback, url) {
     // prep job payload
     var jobPayload = JOB_PAYLOAD.replace('"type":""', '"type":"'+ JobType.AME + '"').replace('"locator":""', '"locator":"S3:/TEST.MXF"');
+    
     request.post(
         url + JOB_API_PATH,
         jobPayload,
@@ -76,12 +79,19 @@ function hitPost(url) {
             if (!error && ( response.statusCode == 200 || response.statusCode == 201 )) {
                 console.log('SUCCESS - extract jobID')
                 console.log(body)
+                // response context
+                var jsonEnvelop = {}
+                var parsed = JSON.parse(body);
+                jsonEnvelop.jobURL = parsed.id
+                callback(null, jsonEnvelop)      
             } else {
                 console.log('ERROR')
                 console.log(body)
+                callback()
             }
         }
     );
+    
 }
 
 function createJob(callback) {
@@ -133,7 +143,7 @@ function createJob(callback) {
             console.log("AWS endpoint: " + endpoint);
             callback();
         }, function (callback) {
-            hitPost(endpoint)
+            hitPost(callback, endpoint)
         }
     ], callback);
 }
