@@ -1,0 +1,28 @@
+{
+  "name": "job-repository",
+  "version": "0.0.1",
+  "description": "FIMS 2.0 Job Repository Service for AWS",
+  "author": "Joost Rovers <joost.rovers@glookast.com>",
+  "engines": {
+    "node": "~4.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "archiver": "^1.3.0",
+    "async": "^2.2.0",
+    "aws-sdk": "^2.33.0",
+    "dynamodb-doc": "^1.0.0",
+    "jsonld": "^0.4.11",
+    "request": "^2.81.0",
+    "uuid": "^3.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/fims-tv/aws-services/issues"
+  },
+  "homepage": "https://github.com/fims-tv/aws-services#readme",
+  "main": "server.js"
+}
