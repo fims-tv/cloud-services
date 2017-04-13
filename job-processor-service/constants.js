@@ -31,6 +31,8 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@type": "xsd:string"
         },
         "Job": "ebucore:Job",
+        "AmeJob": "ebucore:AmeJob",
+        "TransformJob": "ebucore:TransformJob",
         "job": {
             "@id": "ebucore:job",
             "@type": "@id"
@@ -54,9 +56,23 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@id": "ebucore:startJob",
             "@type": "@id"
         },
+        "asyncEndpoint": "ebucore:asyncEndpoint",
+        "success": {
+            "@id": "ebucore:asyncEndpointSuccess",
+            "@type": "xsd:anyUri"
+        },
+        "failure":  {
+            "@id": "ebucore:asyncEndpointFailure",
+            "@type": "xsd:anyUri"
+        },
         "priority": {
             "@id": "ebucore:JobPriority",
             "@type": "xsd:string"
+        },
+        "ProcessJob": "ebucore:ProcessJob",
+        "processJob": {
+            "@id": "ebucore:processJob",
+            "@type": "@id"
         },
         "StopJob": "ebucore:StopJob",
         "stopJob": {

@@ -29,170 +29,20 @@ function testReport(response, body, message, expectedStatusCode, callback) {
 }
 
 var all = {
-    // Retrieve all jobs
+    // Test REST functions
     test1: function (callback) {
-        async.waterfall([
-            function (callback) {
-                request({
-                    url: baseUrl + "/Job",
-                    method: "GET",
-                    json: true
-                }, callback);
-            },
-            function (response, body, callback) {
-                testReport(response, body, "1. GET all jobs", 200, callback);
-            }
-        ], callback);
-    },
-
-    // Insert malformed job
-    test2: function (callback) {
-        async.waterfall([
-            function (callback) {
-                request({
-                    url: baseUrl + "/Job",
-                    method: "POST",
-                    json: true,
-                    body: {
-                        profile: "http://urltoProfile",
-                        hasRelatedResource: "http://urlToBMEssence"
-                    }
-                }, callback);
-            }, function (response, body, callback) {
-                testReport(response, body, "2. POST of malformed job", 400, callback);
-            }
-        ], callback);
-    },
-
-    // Insert new job and retrieve it
-    test3: function (callback) {
         var jobId;
-
-        async.waterfall([
-            function (callback) {
-                request({
-                    url: baseUrl + "/Job",
-                    method: "POST",
-                    json: true,
-                    body: {
-                        "@context": inputContext,
-                        type: "Job",
-                        jobProfile: "http://urltoProfile",
-                        hasRelatedResource: "http://urlToBMEssence"
-                    }
-                }, callback);
-            },
-            function (response, body, callback) {
-                jobId = body.id;
-                testReport(response, body, "3a. POST new job", 201, callback);
-            },
-            function (callback) {
-                request({
-                    url: jobId,
-                    method: "GET",
-                    json: true
-                }, callback);
-            },
-            function (response, body, callback) {
-                testReport(response, body, "3b. GET newly created job", 200, callback);
-            }
-        ], callback);
-    },
-
-
-
-    // Insert new job and overwrite it with put
-    test5: function (callback) {
-        var url = baseUrl + "/Job";
-
         var job;
 
         async.waterfall([
             function (callback) {
                 request({
-                    url: url,
+                    url: baseUrl + "/AmeJob",
                     method: "POST",
                     json: true,
                     body: {
                         "@context": inputContext,
-                        type: "Job",
-                        jobProfile: "http://urltoProfile",
-                        hasRelatedResource: "http://urlToBMEssence"
-                    }
-                }, callback);
-            },
-            function (response, body, callback) {
-                job = body;
-                testReport(response, body, "5a. POST of new Job", 201, callback);
-            },
-            function (callback) {
-                job.jobProfile = "http://anotherProfile";
-                request({
-                    url: job.id,
-                    method: "PUT",
-                    json: true,
-                    body: job
-                }, callback);
-            },
-            function (response, body) {
-                testReport(response, body, "5b. PUT to replace existing Job", 200, callback);
-            }
-        ], callback);
-    },
-
-    // Create new Job Profile and new job referencing it
-    test6: function (callback) {
-        var jobProfileId;
-
-        async.waterfall([
-            function (callback) {
-                request({
-                    url: baseUrl + "/JobProfile",
-                    method: "POST",
-                    json: true,
-                    body: {
-                        "@context": inputContext,
-                        type: "JobProfile",
-                        label: "ExtractTechnicalMetadata"
-                    }
-                }, callback);
-            },
-            function (response, body, callback) {
-                jobProfileId = body.id;
-                testReport(response, body, "6a. POST new JobProfile", 201, callback);
-            },
-            function (callback) {
-                request({
-                    url: baseUrl + "/Job",
-                    method: "POST",
-                    json: true,
-                    body: {
-                        "@context": inputContext,
-                        type: "Job",
-                        jobProfile: jobProfileId,
-                        hasRelatedResource: "http://urlToBMEssenceaaaaa"
-                    }
-                }, callback);
-            },
-            function (response, body, callback) {
-                testReport(response, body, "6b. POST of new Job", 201, callback);
-            },
-        ], callback);
-    },
-
-    // Create new Job with embedded JobProfile and some non relevant metadata
-    test7: function (callback) {
-        var jobId;
-
-        async.waterfall([
-            function (callback) {
-                request({
-                    url: baseUrl + "/Job",
-                    method: "POST",
-                    json: true,
-                    body: {
-                        "@context": inputContext,
-                        type: "Job",
+                        type: "AmeJob",
                         jobProfile: {
                             type: "JobProfile",
                             label: "ExtractTechnicalMetadata"
@@ -206,7 +56,7 @@ var all = {
             },
             function (response, body, callback) {
                 jobId = body.id;
-                testReport(response, body, "7a. POST of new Job with embedded JobProfile", 201, callback);
+                testReport(response, body, "1a. POST AME Job ", 201, callback);
             },
             function (callback) {
                 request({
@@ -216,10 +66,126 @@ var all = {
                 }, callback);
             },
             function (response, body, callback) {
-                testReport(response, body, "7b. GET newly created job with embedded JobProfile", 200, callback);
+                job = body;
+                testReport(response, body, "1b. GET AME Job", 200, callback);
+            },
+            function (callback) {
+                request({
+                    url: baseUrl + "/AmeJob",
+                    method: "GET",
+                    json: true
+                }, callback);
+            },
+            function (response, body, callback) {
+                testReport(response, body, "1c. GET All AME Job", 200, callback);
+            },
+            function (callback) {
+                job.hasRelatedResource.locator = "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_01_conv.mp4"
+
+                request({
+                    url: jobId,
+                    method: "PUT",
+                    json: true,
+                    body: job
+                }, callback);
+            },
+            function (response, body, callback) {
+                jobId = body.id;
+                testReport(response, body, "1d. PUT AME Job ", 200, callback);
+            },
+            function (callback) {
+                request({
+                    url: jobId,
+                    method: "DELETE",
+                    json: true,
+                }, callback);
+            },
+            function (response, body, callback) {
+                jobId = body.id;
+                testReport(response, body, "1e. DELETE AME Job ", 200, callback);
+            },
+        ], callback);
+    },
+
+    // Create new AME Job and start it
+    test2: function (callback) {
+        var jobId;
+        var startJobId;
+
+        async.waterfall([
+            function (callback) {
+                request({
+                    url: baseUrl + "/AmeJob",
+                    method: "POST",
+                    json: true,
+                    body: {
+                        "@context": inputContext,
+                        type: "AmeJob",
+                        jobProfile: {
+                            type: "JobProfile",
+                            label: "ExtractTechnicalMetadata"
+                        },
+                        hasRelatedResource: {
+                            type: "BMEssence",
+                            locator: "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
+                        }
+                    }
+                }, callback);
+            },
+            function (response, body, callback) {
+                jobId = body.id;
+                testReport(response, body, "2a. POST of new AME Job ", 201, callback);
+            },
+            function (callback) {
+                request({
+                    url: jobId,
+                    method: "GET",
+                    json: true
+                }, callback);
+            },
+            function (response, body, callback) {
+                testReport(response, body, "2b. GET newly created AME Job", 200, callback);
+            },
+            function (callback) {
+                request({
+                    url: baseUrl + "/StartJob",
+                    method: "POST",
+                    json: true,
+                    body: {
+                        "@context": inputContext,
+                        type: "StartJob",
+                        job: jobId,
+                        asyncEndpoint: {
+                            "success": "https://workflow-orchestration/success",
+                            "failure": "https://workflow-orchestration/failure"
+                        }
+                    }
+                }, callback);
+            },
+            function (response, body, callback) {
+                startJobId = body.id;
+                testReport(response, body, "2c. POST of new StartJob ", 201, callback);
+            },
+        ], callback);
+    },
+
+      // Retrieve all jobs
+    jobs: function (callback) {
+        async.waterfall([
+            function (callback) {
+                request({
+                    url: baseUrl + "/AmeJob",
+                    method: "GET",
+                    json: true
+                }, callback);
+            },
+            function (response, body, callback) {
+                testReport(response, body, "jobs. GET all jobs", 200, callback);
             }
         ], callback);
     },
+
+
 
     // Retrieve all Jobs, JobProfiles, StartJobs, StopJobs, Reports and delete them one by one
     cleanup: function (callback) {
@@ -228,14 +194,14 @@ var all = {
         async.waterfall([
             function (callback) {
                 request({
-                    url: baseUrl + "/Job",
+                    url: baseUrl + "/AmeJob",
                     method: "GET",
                     json: true
                 }, callback);
             },
             function (response, body, callback) {
                 resources = body;
-                testReport(response, body, "Cleanup. Retrieve all Jobs", 200, callback);
+                testReport(response, body, "Cleanup. Retrieve all AME Jobs", 200, callback);
             },
             function (callback) {
                 var idx = 0;
@@ -252,7 +218,7 @@ var all = {
                             },
                             function (response, body, callback) {
                                 idx++;
-                                testReport(response, body, "Cleanup. Deleting Job", 200, callback);
+                                testReport(response, body, "Cleanup. Deleting AME Job", 200, callback);
                             }
                         ], callback);
                     }, callback);
@@ -385,7 +351,7 @@ var all = {
     },
 }
 
-function extractMetadata (obj, path, defaultValue) {
+function extractMetadata(obj, path, defaultValue) {
     var parts = path.split("/");
     for (var i = 0; i < parts.length; i++) {
         // console.log("-----------------------------");

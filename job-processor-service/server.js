@@ -2,7 +2,7 @@ var http = require("http");
 var uuid = require("uuid");
 var url = require("url");
 
-var apiHandler = require("./fims-rest-api.js");
+var api = require("./fims-api-layer.js");
 var configuration = require("./configuration.js");
 
 var port = process.argv[2] || 8889;
@@ -44,7 +44,9 @@ http.createServer(function (request, response) {
                 proxy: requestUrl.pathname.substring(1),
             },
             stageVariables: {
-                JobRepositoryBaseUrl: testConfig.local.jobRepositoryBaseUrl,
+                AmeServiceUrl: testConfig.local.ameServiceUrl,
+                TransformServiceUrl: testConfig.local.transformServiceUrl,
+                JobRepositoryUrl: testConfig.local.jobRepositoryUrl,
                 PublicUrl: "http://localhost:" + port
             },
             requestContext: {
@@ -86,7 +88,7 @@ http.createServer(function (request, response) {
             invokedFunctionArn: "arn:aws:lambda:us-east-1:123456789012:function:lambda-function"
         };
 
-        apiHandler.handler(event, context, function (err, data) {
+        api.handler(event, context, function (err, data) {
             response.writeHead(data.statusCode, data.headers);
             if (data.body) {
                 response.write(data.body)

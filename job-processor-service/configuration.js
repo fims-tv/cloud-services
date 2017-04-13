@@ -21,7 +21,9 @@ module.exports = {
             console.error("  \"lambdaApiFunctionName\": \"fims-job-processor-rest-api-lambda-function\",");
             console.error("  \"restApiName\": \"fims-job-processor-rest-api\",");
             console.error("  \"restApiStageName\": \"test\"");
-            console.error("  \"jobRepositoryBaseUrl\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"");
+            console.error("  \"jobRepositoryUrl\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"");
+            console.error("  \"ameServiceUrl\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"");
+            console.error("  \"transformServiceUrl\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"");
             console.error("}");
             process.exit(1);
         }
@@ -42,9 +44,9 @@ module.exports = {
                 "        \"endpoint\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"\n" +
                 "    },\n" +
                 "    \"local\": {\n" +
-                "        \"endpoint\": \"http://localhost:8888\",\n" +
-                "        \"dynamodb\": \"http://localhost:8000\",\n" +
-                "        \"region\": \"<region>\"\n" +
+                "        \"ameServiceUrl\": \"http://localhost:8887\",\n" +
+                "        \"jobRepositoryUrl\": \"http://localhost:8888\",\n" +
+                "        \"endpoint\": \"http://localhost:8889\",\n" +
                 "    },\n" +
                 "    \"default\": \"local\"\n" +
                 "}");

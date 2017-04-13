@@ -16,7 +16,7 @@ var configuration = require("./configuration.js");
 
 var CREDENTIALS_FILE = "./credentials.json";
 
-var FIMS_REST_API_PACKAGE_FILE = "./build/fims-rest-api-package.zip";
+var LAMBDA_PACKAGE_FILE = "./build/lambda-package.zip";
 
 //////////////////////////////
 //       AWS Services       //
@@ -190,19 +190,18 @@ function deleteLambdaExecutionRole(callback) {
 //          Lambda          //
 //////////////////////////////
 
-var lambdaProcessorFunction;
 var lambdaApiFunction;
 
-function createFimsRestApiPackage(callback) {
+function createLambdaPackage(callback) {
     if (!fs.existsSync("./build")) {
         fs.mkdirSync("./build");
     }
 
-    var output = fs.createWriteStream(FIMS_REST_API_PACKAGE_FILE);
+    var output = fs.createWriteStream(LAMBDA_PACKAGE_FILE);
     var archive = archiver("zip", { zlib: { level: 9 } });
 
     output.on("close", function () {
-        console.log("Created '" + FIMS_REST_API_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
+        console.log("Created '" + LAMBDA_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
         callback();
     });
 
@@ -213,8 +212,10 @@ function createFimsRestApiPackage(callback) {
     archive.pipe(output);
 
     archive.file("constants.js");
-    archive.file("fims-rest-api.js");
-    archive.file("fims-job-repository.js");
+    archive.file("fims-api-layer.js");
+    archive.file("fims-business-layer.js");
+    archive.file("fims-data-access-layer.js");
+    archive.file("fims-repository.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/jsonld/");
     archive.directory("node_modules/request/");
@@ -222,7 +223,7 @@ function createFimsRestApiPackage(callback) {
     archive.finalize();
 }
 
-function createFimsRestApiLambdaFunction(callback) {
+function createLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
             console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
@@ -238,7 +239,7 @@ function createFimsRestApiLambdaFunction(callback) {
             if (func) {
                 console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_REST_API_PACKAGE_FILE),
+                    ZipFile: fs.readFileSync(LAMBDA_PACKAGE_FILE),
                     FunctionName: config.lambdaApiFunctionName,
                     Publish: true
                 }
@@ -250,10 +251,10 @@ function createFimsRestApiLambdaFunction(callback) {
                 console.log("Creating function '" + config.lambdaApiFunctionName + "'");
                 var params = {
                     Code: {
-                        ZipFile: fs.readFileSync(FIMS_REST_API_PACKAGE_FILE)
+                        ZipFile: fs.readFileSync(LAMBDA_PACKAGE_FILE)
                     },
                     FunctionName: config.lambdaApiFunctionName,
-                    Handler: "fims-rest-api.handler",
+                    Handler: "fims-api-layer.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
@@ -270,7 +271,7 @@ function createFimsRestApiLambdaFunction(callback) {
     ], callback);
 }
 
-function deleteFimsAmeApiLambdaFunction(callback) {
+function deleteLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
             console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
@@ -297,7 +298,7 @@ function deleteFimsAmeApiLambdaFunction(callback) {
     ], callback);
 }
 
-function updateFimsRestApiLambdaFunction(callback) {
+function updateLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
             console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
@@ -313,7 +314,7 @@ function updateFimsRestApiLambdaFunction(callback) {
             if (func) {
                 console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_REST_API_PACKAGE_FILE),
+                    ZipFile: fs.readFileSync(LAMBDA_PACKAGE_FILE),
                     FunctionName: config.lambdaApiFunctionName,
                     Publish: true
                 }
@@ -333,8 +334,8 @@ function deployLambda(callback) {
     console.log("=== deployLambda ===");
     async.waterfall([
         createLambdaExecutionRole,
-        createFimsRestApiPackage,
-        createFimsRestApiLambdaFunction,
+        createLambdaPackage,
+        createLambdaFunction,
     ], callback);
 }
 
@@ -342,7 +343,7 @@ function undeployLambda(callback) {
     console.log();
     console.log("=== undeployLambda ===");
     async.waterfall([
-        deleteFimsAmeApiLambdaFunction,
+        deleteLambdaFunction,
         deleteLambdaExecutionRole
     ], callback);
 }
@@ -351,8 +352,8 @@ function updateLambdaCode(callback) {
     console.log();
     console.log("=== updateLambdaCode ===");
     async.waterfall([
-        createFimsRestApiPackage,
-        updateFimsRestApiLambdaFunction,
+        createLambdaPackage,
+        updateLambdaFunction,
     ], callback);
 }
 
@@ -565,9 +566,10 @@ function createRestAPI(callback) {
                     cacheClusterEnabled: false,
                     stageName: config.restApiStageName,
                     variables: {
-                        JobRepositoryBaseUrl: config.jobRepositoryBaseUrl,
+                        AmeServiceUrl: config.ameServiceUrl,
+                        TransformServiceUrl: config.transformServiceUrl,
+                        JobRepositoryUrl: config.jobRepositoryUrl,
                         PublicUrl: "https://" + restApi.id + ".execute-api." + lambdaApiFunctionRegion + ".amazonaws.com/" + config.restApiStageName
-                        
                     }
                 };
                 apigateway.createDeployment(params, function (err, data) {
