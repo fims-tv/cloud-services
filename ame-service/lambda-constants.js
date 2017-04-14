@@ -58,6 +58,11 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@id": "ebucore:JobPriority",
             "@type": "xsd:string"
         },
+        "ProcessJob": "ebucore:ProcessJob",
+        "processJob": {
+            "@id": "ebucore:processJob",
+            "@type": "@id"
+        },
         "StopJob": "ebucore:StopJob",
         "stopJob": {
             "@id": "ebucore:stopJob",

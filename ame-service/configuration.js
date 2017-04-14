@@ -17,10 +17,9 @@ module.exports = {
             console.error("Deployment Configuration file is missing");
             console.error("Create a file with name '" + DEPLOY_CONFIG_FILE + "' with the following content:");
             console.error("{");
-            console.error("  \"tableName\": \"fims-ame\",");
             console.error("  \"lambdaExecutionRoleName\": \"fims-ame-lambda-execution-role\",");
-            console.error("  \"lambdaApiFunctionName\": \"fims-ame-api-lambda-function\",");
-            console.error("  \"lambdaProcessorFunctionName\": \"fims-ame-processor-lambda-function\",");
+            console.error("  \"restApiLambdaFunctionName\": \"fims-ame-rest-api\",");
+            console.error("  \"workerLambdaFunctionName\": \"fims-ame-worker\",");
             console.error("  \"restApiName\": \"fims-ame-rest-api\",");
             console.error("  \"restApiStageName\": \"test\"");
             console.error("}");
@@ -43,9 +42,7 @@ module.exports = {
                 "        \"endpoint\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"\n" +
                 "    },\n" +
                 "    \"local\": {\n" +
-                "        \"endpoint\": \"http://localhost:8888\",\n" +
-                "        \"dynamodb\": \"http://localhost:8000\",\n" +
-                "        \"region\": \"<region>\"\n" +
+                "        \"endpoint\": \"http://localhost:8887\",\n" +
                 "    },\n" +
                 "    \"default\": \"local\"\n" +
                 "}");
