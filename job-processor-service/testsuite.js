@@ -127,8 +127,9 @@ var all = {
                         },
                         hasRelatedResource: {
                             type: "BMEssence",
-                            locator: "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
-                        }
+                            locator: "https://s3.amazonaws.com/dev.fims.tv/2015_GF_ORF_00_00_00_conv.mp4"
+                        },
+                        outputFile: "https://s3.amazonaws.com/dev.fims.tv/2015_GF_ORF_00_00_00_conv.metadata.jsonld"
                     }
                 }, callback);
             },

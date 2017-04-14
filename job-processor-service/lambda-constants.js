@@ -87,15 +87,9 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@id": "ebucore:stopJobError",
             "@type": "xsd:string"
         },
-        "Report": "ebucore:Report",
-        "report": {
-            "@id": "ebucore:Report",
-            "@type": "@id"
-        },
-        "TechnicalMetadata": "ebucore:TecnicalMetadata",
-        "technicalMetadata": {
-            "@id": "ebucore:TecnicalMetadata",
-            "@type": "@id"
+        "outputFile": {
+            "@id": "ebucore:outputFile",
+            "@type": "xsd:anyURI"
         },
     }
 };

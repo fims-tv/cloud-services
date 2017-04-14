@@ -37,6 +37,7 @@ function postStartJob(event, startJob, callback) {
 
             console.log("2. Changing job status to QUEUED");
             job.jobStatus = "QUEUED";
+            job.startJob = startJob.id;
             dal.put(event, job, callback);
         },
         function (data, callback) {
@@ -53,7 +54,20 @@ function postStartJob(event, startJob, callback) {
                 return callback(err);
             });
         },
-    ], callback);
+    ], function (err) {
+        if (err) {
+            console.log("postStartJob() failed with error '" + err + "'");
+            if (startJob.asyncEndpoint && startJob.asyncEndpoint) {
+                return dal.get(event, startJob.asyncEndpoint.failure, function (err) {
+                    if (err) {
+                        console.log("GET from '" + startJob.asyncEndpoint.failure + "' failed with error '" + err + "'");
+                    }
+                    return callback();
+                });
+            }
+        }
+        return callback();
+    });
 }
 
 function get(event, url, callback) {
@@ -86,7 +100,48 @@ function post(event, resource, callback) {
 }
 
 function put(event, resource, callback) {
-    dal.put(event, resource, callback);
+    dal.put(event, resource, function (err, resource) {
+        if (err) {
+            return callback(err);
+        }
+
+        switch (resource.type) {
+            case "AmeJob":
+            case "TransformJob":
+                switch (resource.jobStatus) {
+                    case "COMPLETED":
+                    case "FAILED":
+                        return dal.get(event, resource.startJob, function (err, startJob) {
+                            if (err) {
+                                console.log("Failed to retrieve startJob");
+                                return callback(null, resource);
+                            }
+
+                            if (startJob.asyncEndpoint && startJob.asyncEndpoint) {
+                                if (resource.jobStatus === "FAILED") {
+                                    return dal.get(event, startJob.asyncEndpoint.failure, function (err) {
+                                        if (err) {
+                                            console.log("GET from '" + startJob.asyncEndpoint.failure + "' failed with error '" + err + "'");
+                                        }
+                                        return callback(null, resource);
+                                    });
+                                } else {
+                                    return dal.get(event, startJob.asyncEndpoint.success, function (err) {
+                                        if (err) {
+                                            console.log("GET from '" + startJob.asyncEndpoint.success + "' failed with error '" + err + "'");
+                                        }
+                                        return callback(null, resource);
+                                    });
+                                }
+                            }
+                            return callback(null, resource);
+                        });
+                }
+                break;
+        }
+
+        return callback(err, resource);
+    });
 }
 
 function del(event, url, callback) {

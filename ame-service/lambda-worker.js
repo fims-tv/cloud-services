@@ -125,44 +125,25 @@ function doProcessJob(event, processJob, callback) {
             console.log("Extracting metadata from: ");
             console.log(JSON.stringify(result, null, 2));
 
-            report = {
-                type: "Report",
-                technicalMetadata: {
-                    type: "TechnicalMetadata"
-                }
+            if (!job.outputFile) {
+                return callback("OutputFile missing");
             }
 
-            var videoFormatName = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/$/videoFormatName");
-            var videoFrameWidth = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:width/_");
-            var videoFrameWidthUnit = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:width/$/unit");
-            var videoFrameHeight = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:height/_");
-            var videoFrameHeightUnit = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:height/$/unit");
-            var videoFrameRate = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:frameRate/_");
-            var videoEncoding = extractMetadata(result, "ebucore:ebuCoreMain/ebucore:coreMetadata/ebucore:format/ebucore:videoFormat/ebucore:videoEncoding/$/typeLabel");
-            var videoEncodingProfile;
-            var videoEncodingLevel;
-            if (videoEncoding) {
-                var parts = videoEncoding.split("@");
-                if (parts.length === 2) {
-                    videoEncodingProfile = parts[0];
-                    videoEncodingLevel = parts[1];
-                }
-            }
+            var bucket = job.outputFile.substring(job.outputFile.indexOf("/", 8) + 1);
+            var key = bucket.substring(bucket.indexOf("/") + 1);
+            bucket = bucket.substring(0, bucket.indexOf("/"));
 
-            addToReport(report, "ebucore:hasVideoEncodingFormat", videoFormatName);
-            addToReport(report, "ebucore:videoEncodingProfile", videoEncodingProfile);
-            addToReport(report, "ebucore:videoEncodingLevel", videoEncodingLevel);
-            addToReport(report, "ebucore:frameWidth", videoFrameWidth);
-            addToReport(report, "ebucore:frameWidthUnit", videoFrameWidthUnit);
-            addToReport(report, "ebucore:frameHeight", videoFrameHeight);
-            addToReport(report, "ebucore:frameHeightUnit", videoFrameHeightUnit);
-            addToReport(report, "ebucore:frameRate", videoFrameRate);
-
-            job.report = report;
-
-            return bal.put(event, job, function (err) {
-                callback(err);
-            });
+            console.log("Storing file in bucket '" + bucket + "' with key '" + key + "'");
+            var params = {
+                Bucket: bucket,
+                Key: key,
+                Body: JSON.stringify(result, null, 2)
+            };
+            return s3.putObject(params, callback)
+        },
+        function (data, callback) {
+            console.log("Successfully stored file");
+            return callback();
         }
     ], function (processError) {
         if (processError) {
