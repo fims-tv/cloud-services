@@ -5,7 +5,7 @@ Note that this is work in progress.
 
 1. Workflow Orchestration -> Job Processor: HTTP Request - Creating a new Job
 ```HTTP
-POST /Job HTTP/1.1
+POST /AmeJob HTTP/1.1
 Host: job-processor
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
@@ -27,7 +27,7 @@ Content-Length: xxx
 
 2. Job Processor -> Job Repository: HTTP Request - Storing job in job-repository
 ```HTTP
-POST /Job HTTP/1.1
+POST /AmeJob HTTP/1.1
 Host: job-processor
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
@@ -51,13 +51,13 @@ Content-Length: xxx
 3. Job Repository -> Job Processor: HTTP Response to 2 - Acknowledgement from job-repository
 ```HTTP
 HTTP/1.1 201 Created
-Location: /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14
+Location: /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -78,13 +78,13 @@ Content-Length: xxx
 4. Job Processor -> Workflow Orchestration: HTTP Response to 1 - Acknowledgement from job-processor
 ```HTTP
 HTTP/1.1 201 Created
-Location: /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14
+Location: /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-processor/context/default",
-  "id":  "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -111,7 +111,7 @@ Content-Length: xxx
 {
   "@context": "https://job-processor/context/default",
   "type": "StartJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -121,7 +121,7 @@ Content-Length: xxx
 
 6. Job Processor -> Job Repository: HTTP Request - Retrieving Job
 ```HTTP
-GET /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
+GET /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
 Host: job-repository
 ```
 
@@ -133,7 +133,7 @@ Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -160,7 +160,7 @@ Content-Length: xxx
 {
   "@context": "https://job-repository/context/default",
   "type": "StartJob",
-  "job": "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -179,7 +179,7 @@ Content-Length: xxx
   "@context": "https://job-repository/context/default",
   "id": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "type": "StartJob",
-  "job": "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -191,14 +191,14 @@ Content-Length: xxx
 
 10. Job Processor -> Job Repository: HTTP Request - Update Job status to QUEUED
 ```HTTP
-PUT /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
+PUT /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
 Host: job-repository
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -224,7 +224,7 @@ Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -253,7 +253,7 @@ Content-Length: xxx
   "@context": "https://job-processor/context/default",
   "id": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "type": "StartJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -273,7 +273,7 @@ Content-Length: xxx
 {
   "@context": "https://job-processor/context/default",
   "type": "ProcessJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14"
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14"
 }
 ```
 
@@ -288,7 +288,7 @@ Content-Length: xxx
   "@context": "https://ame-service/context/default",
   "id": "https://ame-service/ProcessJob/6d634643-5236-4de1-8a02-e5466c632c18",
   "type": "ProcessJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "dateCreated": "2017-03-30T13:11:42.888Z",
   "dateModified": "2017-03-30T13:11:42.888Z"
 }
@@ -296,14 +296,14 @@ Content-Length: xxx
 
 15. Job Processor -> Job Repository: HTTP Request - JobStatus is now RUNNING
 ```HTTP
-PUT /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
+PUT /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
 Host: job-repository
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -329,7 +329,7 @@ Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -349,14 +349,14 @@ Content-Length: xxx
 
 17. AME service -> Job Processor: HTTP Request - Updating job with intermediate / final results
 ```HTTP
-PUT /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
+PUT /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
 Host: job-processor
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-processor/context/default",
-  "id":  "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -379,14 +379,14 @@ Content-Length: xxx
 
 18. Job processor -> Job repository: HTTP Request - Storing Job update in job-repository
 ```HTTP
-PUT /Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
+PUT /AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14 HTTP/1.1
 Host: job-repository
 Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -415,7 +415,7 @@ Content-Length: xxx
 
 {
   "@context": "https://job-repository/context/default",
-  "id":  "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -445,7 +445,7 @@ Content-Length: xxx
 
 {
   "@context": "https://job-processor/context/default",
-  "id":  "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "id":  "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "type": "AmeJob",
   "jobProfile": {
     "label": "ExtractTechnicalMetadata",
@@ -478,7 +478,7 @@ Content-Length: xxx
   "@context": "https://ame-service/context/default",
   "id": "https://job-processor/StopJob/9b6549bc-3f9d-4c4d-8df4-6d49b29ffd27",
   "type": "StopJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "stopJobCause": "COMPLETED",
   "dateCreated": "2017-03-30T13:11:42.286Z",
   "dateModified": "2017-03-30T13:11:42.286Z"
@@ -496,7 +496,7 @@ Content-Length: xxx
   "@context": "https://ame-service/context/default",
   "id": "https://job-processor/StopJob/9b6549bc-3f9d-4c4d-8df4-6d49b29ffd27",
   "type": "StopJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "stopJobCause": "COMPLETED",
   "dateCreated": "2017-03-30T13:11:42.286Z",
   "dateModified": "2017-03-30T13:11:42.286Z"
@@ -514,7 +514,7 @@ Content-Length: xxx
   "@context": "https://job-repository/context/default",
   "id": "https://job-repository/StopJob/9b6549bc-3f9d-4c4d-8df4-6d49b29ffd27",
   "type": "StopJob",
-  "job": "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-repository/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "stopJobCause": "COMPLETED",
   "dateCreated": "2017-03-30T13:11:45.286Z",
   "dateModified": "2017-03-30T13:11:45.286Z"
@@ -531,7 +531,7 @@ Content-Length: xxx
   "@context": "https://job-processor/context/default",
   "id": "https://job-processor/StopJob/9b6549bc-3f9d-4c4d-8df4-6d49b29ffd27",
   "type": "StopJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "stopJobCause": "COMPLETED",
   "dateCreated": "2017-03-30T13:11:45.286Z",
   "dateModified": "2017-03-30T13:11:45.286Z"
@@ -546,6 +546,6 @@ Content-Type: application/json; charset=utf-8
 Content-Length: xxx
 
 {
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14"
+  "job": "https://job-processor/AmeJob/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14"
 }
 ```
