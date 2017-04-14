@@ -18,7 +18,7 @@ module.exports = {
             console.error("Create a file with name '" + DEPLOY_CONFIG_FILE + "' with the following content:");
             console.error("{");
             console.error("  \"lambdaExecutionRoleName\": \"fims-job-processor-lambda-execution-role\",");
-            console.error("  \"lambdaApiFunctionName\": \"fims-job-processor-rest-api-lambda-function\",");
+            console.error("  \"lambdaApiFunctionName\": \"fims-job-processor-rest-api\",");
             console.error("  \"restApiName\": \"fims-job-processor-rest-api\",");
             console.error("  \"restApiStageName\": \"test\"");
             console.error("  \"jobRepositoryUrl\": \"https://<restApiId>.execute-api.<region>.amazonaws.com/<stageName>\"");

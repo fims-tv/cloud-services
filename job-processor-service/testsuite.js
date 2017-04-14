@@ -4,7 +4,7 @@ var request = require("request");
 
 var configuration = require("./configuration.js");
 
-var constants = require("./constants.js");
+var constants = require("./lambda-constants.js");
 
 var inputContext = constants.CONTEXTS[constants.DEFAULT_CONTEXT];
 
@@ -163,7 +163,9 @@ var all = {
                 }, callback);
             },
             function (response, body, callback) {
-                startJobId = body.id;
+                if (body) {
+                    startJobId = body.id;
+                }
                 testReport(response, body, "2c. POST of new StartJob ", 201, callback);
             },
         ], callback);
