@@ -20,7 +20,8 @@ Content-Length: xxx
   "hasRelatedResource": {
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
-  }
+  },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld"
 }
 ```
 
@@ -42,6 +43,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "NEW"
 }
 ```
@@ -65,6 +67,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "NEW",
   "dateCreated": "2017-03-30T13:11:40.078Z",
   "dateModified": "2017-03-30T13:11:40.078Z",
@@ -91,6 +94,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "NEW",
   "dateCreated": "2017-03-30T13:11:40.078Z",
   "dateModified": "2017-03-30T13:11:40.078Z",
@@ -108,7 +112,6 @@ Content-Length: xxx
   "@context": "https://job-processor/context/default",
   "type": "StartJob",
   "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
-  "priority": "MEDIUM",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -140,6 +143,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "NEW",
   "dateCreated": "2017-03-30T13:11:40.078Z",
   "dateModified": "2017-03-30T13:11:40.078Z",
@@ -157,7 +161,6 @@ Content-Length: xxx
   "@context": "https://job-repository/context/default",
   "type": "StartJob",
   "job": "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
-  "priority": "MEDIUM",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -177,7 +180,6 @@ Content-Length: xxx
   "id": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "type": "StartJob",
   "job": "https://job-repository/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
-  "priority": "MEDIUM",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -206,6 +208,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "QUEUED",
   "startJob": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "dateCreated": "2017-03-30T13:11:40.078Z",
@@ -231,6 +234,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "QUEUED",
   "startJob": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "dateCreated": "2017-03-30T13:11:40.078Z",
@@ -250,7 +254,6 @@ Content-Length: xxx
   "id": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "type": "StartJob",
   "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
-  "priority": "MEDIUM",
   "asyncEndpoint": {
     "success": "https://workflow-orchestration/success",
     "failure": "https://workflow-orchestration/failure"
@@ -285,7 +288,7 @@ Content-Length: xxx
   "@context": "https://ame-service/context/default",
   "id": "https://ame-service/ProcessJob/6d634643-5236-4de1-8a02-e5466c632c18",
   "type": "ProcessJob",
-  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14"
+  "job": "https://job-processor/Job/50f8a0cb-d722-43a9-bef9-2f4c0ebb3e14",
   "dateCreated": "2017-03-30T13:11:42.888Z",
   "dateModified": "2017-03-30T13:11:42.888Z"
 }
@@ -310,6 +313,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "RUNNING",
   "startJob": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "dateCreated": "2017-03-30T13:11:40.078Z",
@@ -335,6 +339,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "RUNNING",
   "startJob": "https://job-repository/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "dateCreated": "2017-03-30T13:11:40.078Z",
@@ -361,6 +366,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "COMPLETED",
   "startJob": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "report": {
@@ -390,6 +396,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "COMPLETED",
   "startJob": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "report": {
@@ -418,6 +425,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "COMPLETED",
   "startJob": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "report": {
@@ -447,6 +455,7 @@ Content-Length: xxx
     "type": "BMEssence",
     "locator": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
   },
+  "outputFile": "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.metadata.jsonld",
   "jobStatus": "COMPLETED",
   "startJob": "https://job-processor/StartJob/02088b54-f5e0-405f-ba3a-34e5aa386a93",
   "report": {
