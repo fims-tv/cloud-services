@@ -2,18 +2,15 @@ var http = require("http");
 var uuid = require("uuid");
 var url = require("url");
 
-var apiHandler = require("./fims-ame-rest-api.js");
+var api = require("./lambda-rest-api.js");
 var configuration = require("./configuration.js");
 
-var port = process.argv[2] || 8888;
+var port = process.argv[2] || 8887;
 
 console.log("Starting");
 
 var deployConfig = configuration.deployConfig();
 var testConfig = configuration.testConfig();
-
-apiHandler.AWS.config.region = testConfig.local.region;
-apiHandler.AWS.config.endpoint = testConfig.local.dynamodb
 
 http.createServer(function (request, response) {
     var body = null;
@@ -47,7 +44,6 @@ http.createServer(function (request, response) {
                 proxy: requestUrl.pathname.substring(1),
             },
             stageVariables: {
-                TableName: deployConfig.tableName,
                 PublicUrl: "http://localhost:" + port
             },
             requestContext: {
@@ -89,7 +85,7 @@ http.createServer(function (request, response) {
             invokedFunctionArn: "arn:aws:lambda:us-east-1:123456789012:function:lambda-function"
         };
 
-        apiHandler.handler(event, context, function (err, data) {
+        api.handler(event, context, function (err, data) {
             response.writeHead(data.statusCode, data.headers);
             if (data.body) {
                 response.write(data.body)

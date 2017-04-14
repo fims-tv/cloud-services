@@ -351,7 +351,7 @@ function createFimsRestApiLambdaFunction(callback) {
                     Description: "",
                     MemorySize: 128,
                     Publish: true,
-                    Timeout: 3
+                    Timeout: 30
                 };
                 lambda.createFunction(params, function (err, data) {
                     lambdaApiFunction = data;

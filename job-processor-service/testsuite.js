@@ -4,7 +4,7 @@ var request = require("request");
 
 var configuration = require("./configuration.js");
 
-var constants = require("./constants.js");
+var constants = require("./lambda-constants.js");
 
 var inputContext = constants.CONTEXTS[constants.DEFAULT_CONTEXT];
 
@@ -127,8 +127,9 @@ var all = {
                         },
                         hasRelatedResource: {
                             type: "BMEssence",
-                            locator: "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt/2015_GF_ORF_00_00_00_conv.mp4"
-                        }
+                            locator: "https://s3.amazonaws.com/dev.fims.tv/2015_GF_ORF_00_00_00_conv.mp4"
+                        },
+                        outputFile: "https://s3.amazonaws.com/dev.fims.tv/2015_GF_ORF_00_00_00_conv.metadata.jsonld"
                     }
                 }, callback);
             },
@@ -163,7 +164,9 @@ var all = {
                 }, callback);
             },
             function (response, body, callback) {
-                startJobId = body.id;
+                if (body) {
+                    startJobId = body.id;
+                }
                 testReport(response, body, "2c. POST of new StartJob ", 201, callback);
             },
         ], callback);

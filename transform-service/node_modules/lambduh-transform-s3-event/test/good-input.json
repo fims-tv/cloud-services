@@ -1,0 +1,14 @@
+{
+  "Records": [
+    {
+    "s3": {
+      "bucket": {
+        "name": "pirate-bucket"
+      },
+      "object": {
+        "key": "arrrr-my-keeeeeey.png"
+      }
+    }
+  }
+  ]
+}

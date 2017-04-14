@@ -19,7 +19,7 @@ module.exports = {
             console.error("{");
             console.error("  \"tableName\": \"fims-job-repository\",");
             console.error("  \"lambdaExecutionRoleName\": \"fims-job-repository-lambda-execution-role\",");
-            console.error("  \"lambdaApiFunctionName\": \"fims-job-repository-rest-api-lambda-function\",");
+            console.error("  \"lambdaApiFunctionName\": \"fims-job-repository-rest-api\",");
             console.error("  \"restApiName\": \"fims-job-repository-rest-api\",");
             console.error("  \"restApiStageName\": \"test\"");
             console.error("}");
