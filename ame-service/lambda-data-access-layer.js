@@ -3,7 +3,7 @@
 var jsonld = require("jsonld");
 var request = require("request");
 
-var repository = require("./fims-repository.js");
+var repository = require("./lambda-repository.js");
 
 function get(event, object, callback) {
     var type = typeof object;

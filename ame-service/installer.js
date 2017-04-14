@@ -16,8 +16,8 @@ var configuration = require("./configuration.js");
 
 var CREDENTIALS_FILE = "./credentials.json";
 
-var FIMS_AME_API_PACKAGE_FILE = "./build/fims-ame-api-package.zip";
-var FIMS_AME_PROCESSOR_PACKAGE_FILE = "./build/fims-ame-processor-package.zip";
+var REST_API_LAMBDA_PACKAGE_FILE = "./build/rest-api-lambda-package.zip";
+var WORKER_LAMBDA_PACKAGE_FILE = "./build/worker-lambda-package.zip";
 
 //////////////////////////////
 //       AWS Services       //
@@ -32,106 +32,9 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
     process.exit(1);
 }
 
-var dynamodb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 var iam = new AWS.IAM({ apiVersion: "2010-05-08" });
 var lambda = new AWS.Lambda({ apiVersion: "2015-03-31" });
 var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
-var dynamodbstreams = new AWS.DynamoDBStreams({ apiVersion: '2012-08-10' });
-
-//////////////////////////////
-//          Dynamo          //
-//////////////////////////////
-
-var dynamoTable;
-
-function deployDynamo(callback) {
-    console.log();
-    console.log("=== deployDynamo ===");
-    async.waterfall([
-        function (callback) {
-            console.log("Searching for table '" + config.tableName + "'");
-            dynamodb.listTables(callback);
-        },
-        function (data, callback) {
-            if (data.TableNames.indexOf(config.tableName) >= 0) {
-                console.log("Found table '" + config.tableName + "'");
-                dynamodb.describeTable({ TableName: config.tableName }, function (err, data) {
-                    dynamoTable = data.Table;
-                    callback(err);
-                });
-
-            } else {
-                console.log("Creating table '" + config.tableName + "'");
-                var params = {
-                    AttributeDefinitions: [
-                        {
-                            AttributeName: "resource_type",
-                            AttributeType: "S"
-                        },
-                        {
-                            AttributeName: "resource_id",
-                            AttributeType: "S"
-                        }
-                    ],
-                    KeySchema: [
-                        {
-                            AttributeName: "resource_type",
-                            KeyType: "HASH"
-                        },
-                        {
-                            AttributeName: "resource_id",
-                            KeyType: "RANGE"
-                        }
-                    ],
-                    ProvisionedThroughput: {
-                        ReadCapacityUnits: 5,
-                        WriteCapacityUnits: 5
-                    },
-                    TableName: config.tableName,
-                    StreamSpecification: {
-                        StreamEnabled: true,
-                        StreamViewType: "KEYS_ONLY"
-                    }
-                };
-                dynamodb.createTable(params, function (err, data) {
-                    dynamoTable = data.TableDescription;
-                    callback(err)
-                });
-            }
-        }
-    ], callback);
-}
-
-function undeployDynamo(callback) {
-    console.log();
-    console.log("=== undeployDynamo ===");
-    async.waterfall([
-        function (callback) {
-            console.log("Searching for table '" + config.tableName + "'");
-            dynamodb.listTables(callback);
-        },
-        function (data, callback) {
-            if (data.TableNames.indexOf(config.tableName) >= 0) {
-                console.log("Deleting table '" + config.tableName + "'");
-                var params = {
-                    TableName: config.tableName
-                };
-                dynamodb.deleteTable(params, function (err, data) {
-                    callback(err)
-                });
-            } else {
-                console.log("Table '" + config.tableName + "' not found");
-                callback();
-            }
-        }
-    ], callback);
-}
-
-function configDynamoLocal(callback) {
-    var testConfig = configuration.testConfig();
-    dynamodb.endpoint = new AWS.Endpoint(testConfig.local.dynamodb);
-    callback();
-}
 
 //////////////////////////////
 //           IAM            //
@@ -139,13 +42,9 @@ function configDynamoLocal(callback) {
 
 var lambdaExecutionRole = null;
 
-const policyAmazonDynamoDBFullAccess = {
-    PolicyName: "AmazonDynamoDBFullAccess",
-    PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-};
-const policyAWSLambdaExecute = {
-    PolicyName: "AWSLambdaExecute",
-    PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaExecute"
+const policyAWSLambdaFullAccess = {
+    PolicyName: "AWSLambdaFullAccess",
+    PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaFullAccess"
 };
 
 function attachRolePolicy(role, requiredPolicy, currentPolicies, callback) {
@@ -218,11 +117,8 @@ function createLambdaExecutionRole(callback) {
         function (data, callback) {
             attachedPolicies = data.AttachedPolicies;
 
-            attachRolePolicy(lambdaExecutionRole, policyAWSLambdaExecute, attachedPolicies, callback);
-        },
-        function (callback) {
-            attachRolePolicy(lambdaExecutionRole, policyAmazonDynamoDBFullAccess, attachedPolicies, callback);
-        },
+            attachRolePolicy(lambdaExecutionRole, policyAWSLambdaFullAccess, attachedPolicies, callback);
+        }
     ], callback);
 }
 
@@ -287,19 +183,19 @@ function deleteLambdaExecutionRole(callback) {
 //          Lambda          //
 //////////////////////////////
 
-var lambdaProcessorFunction;
-var lambdaApiFunction;
+var workerlambdaFunction;
+var restApiLambdaFunction;
 
-function createFimsAmeApiPackage(callback) {
+function createRestApiLambdaPackage(callback) {
     if (!fs.existsSync("./build")) {
         fs.mkdirSync("./build");
     }
 
-    var output = fs.createWriteStream(FIMS_AME_API_PACKAGE_FILE);
+    var output = fs.createWriteStream(REST_API_LAMBDA_PACKAGE_FILE);
     var archive = archiver("zip", { zlib: { level: 9 } });
 
     output.on("close", function () {
-        console.log("Created '" + FIMS_AME_API_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
+        console.log("Created '" + REST_API_LAMBDA_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
         callback();
     });
 
@@ -309,9 +205,11 @@ function createFimsAmeApiPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("constants.js");
-    archive.file("fims-ame-rest-api.js");
-    archive.file("fims-ame-repository.js");
+    archive.file("lambda-business-layer.js");
+    archive.file("lambda-constants.js");
+    archive.file("lambda-data-access-layer.js");
+    archive.file("lambda-repository.js");
+    archive.file("lambda-rest-api.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/jsonld/");
     archive.directory("node_modules/request/");
@@ -319,38 +217,38 @@ function createFimsAmeApiPackage(callback) {
     archive.finalize();
 }
 
-function createFimsAmeApiLambdaFunction(callback) {
+function createRestApiLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
+            console.log("Searching for function '" + config.restApiLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaApiFunctionName === f.FunctionName) {
+                if (config.restApiLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
+                console.log("Updating code of function '" + config.restApiLambdaFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE),
-                    FunctionName: config.lambdaApiFunctionName,
+                    ZipFile: fs.readFileSync(REST_API_LAMBDA_PACKAGE_FILE),
+                    FunctionName: config.restApiLambdaFunctionName,
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaApiFunction = data;
+                    restApiLambdaFunction = data;
                     callback(err);
                 });
             } else {
-                console.log("Creating function '" + config.lambdaApiFunctionName + "'");
+                console.log("Creating function '" + config.restApiLambdaFunctionName + "'");
                 var params = {
                     Code: {
-                        ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE)
+                        ZipFile: fs.readFileSync(REST_API_LAMBDA_PACKAGE_FILE)
                     },
-                    FunctionName: config.lambdaApiFunctionName,
-                    Handler: "fims-ame-rest-api.handler",
+                    FunctionName: config.restApiLambdaFunctionName,
+                    Handler: "lambda-rest-api.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
@@ -359,7 +257,7 @@ function createFimsAmeApiLambdaFunction(callback) {
                     Timeout: 3
                 };
                 lambda.createFunction(params, function (err, data) {
-                    lambdaApiFunction = data;
+                    restApiLambdaFunction = data;
                     callback(err);
                 });
             }
@@ -367,74 +265,74 @@ function createFimsAmeApiLambdaFunction(callback) {
     ], callback);
 }
 
-function deleteFimsAmeApiLambdaFunction(callback) {
+function deleteRestApiLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
+            console.log("Searching for function '" + config.restApiLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaApiFunctionName === f.FunctionName) {
+                if (config.restApiLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Deleting function '" + config.lambdaApiFunctionName + "'");
-                var params = { FunctionName: config.lambdaApiFunctionName };
+                console.log("Deleting function '" + config.restApiLambdaFunctionName + "'");
+                var params = { FunctionName: config.restApiLambdaFunctionName };
                 lambda.deleteFunction(params, function (err, data) {
                     callback(err)
                 });
             } else {
-                console.log("Function '" + config.lambdaApiFunctionName + "' not found");
+                console.log("Function '" + config.restApiLambdaFunctionName + "' not found");
                 callback();
             }
         }
     ], callback);
 }
 
-function updateFimsAmeApiLambdaFunction(callback) {
+function updateRestApiLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaApiFunctionName + "'");
+            console.log("Searching for function '" + config.restApiLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaApiFunctionName === f.FunctionName) {
+                if (config.restApiLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Updating code of function '" + config.lambdaApiFunctionName + "'");
+                console.log("Updating code of function '" + config.restApiLambdaFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_AME_API_PACKAGE_FILE),
-                    FunctionName: config.lambdaApiFunctionName,
+                    ZipFile: fs.readFileSync(REST_API_LAMBDA_PACKAGE_FILE),
+                    FunctionName: config.restApiLambdaFunctionName,
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaApiFunction = data;
+                    restApiLambdaFunction = data;
                     callback(err);
                 });
             } else {
-                callback("Not found function '" + config.lambdaApiFunctionName + "'");
+                callback("Not found function '" + config.restApiLambdaFunctionName + "'");
             }
         }
     ], callback);
 }
 
-function createFimsAmeProcessorPackage(callback) {
+function createWorkerLambdaPackage(callback) {
     if (!fs.existsSync("./build")) {
         fs.mkdirSync("./build");
     }
 
-    var output = fs.createWriteStream(FIMS_AME_PROCESSOR_PACKAGE_FILE);
+    var output = fs.createWriteStream(WORKER_LAMBDA_PACKAGE_FILE);
     var archive = archiver("zip", { zlib: { level: 9 } });
 
     output.on("close", function () {
-        console.log("Created '" + FIMS_AME_PROCESSOR_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
+        console.log("Created '" + WORKER_LAMBDA_PACKAGE_FILE + "' with size of " + archive.pointer() + " bytes");
         callback();
     });
 
@@ -444,9 +342,11 @@ function createFimsAmeProcessorPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("constants.js");
-    archive.file("fims-ame-processor.js");
-    archive.file("fims-ame-repository.js");
+    archive.file("lambda-business-layer.js");
+    archive.file("lambda-constants.js");
+    archive.file("lambda-data-access-layer.js");
+    archive.file("lambda-repository.js");
+    archive.file("lambda-worker.js");
     archive.file("externals/mediainfo/0.7.93.x86_64.RHEL_7/mediainfo", { name: "bin/mediainfo", mode: 0755 });
     archive.directory("externals/libmediainfo/0.7.93.x86_64.RHEL_7/", "lib");
     archive.directory("externals/libzen/0.4.34.x86_64.RHEL_7/", "lib");
@@ -458,38 +358,38 @@ function createFimsAmeProcessorPackage(callback) {
     archive.finalize();
 }
 
-function createFimsAmeProcessorLambdaFunction(callback) {
+function createWorkerLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            console.log("Searching for function '" + config.workerLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                if (config.workerLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Updating code of function '" + config.lambdaProcessorFunctionName + "'");
+                console.log("Updating code of function '" + config.workerLambdaFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE),
-                    FunctionName: config.lambdaProcessorFunctionName,
+                    ZipFile: fs.readFileSync(WORKER_LAMBDA_PACKAGE_FILE),
+                    FunctionName: config.workerLambdaFunctionName,
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaProcessorFunction = data;
+                    workerlambdaFunction = data;
                     callback(err);
                 });
             } else {
-                console.log("Creating function '" + config.lambdaProcessorFunctionName + "'");
+                console.log("Creating function '" + config.workerLambdaFunctionName + "'");
                 var params = {
                     Code: {
-                        ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE)
+                        ZipFile: fs.readFileSync(WORKER_LAMBDA_PACKAGE_FILE)
                     },
-                    FunctionName: config.lambdaProcessorFunctionName,
-                    Handler: "fims-ame-processor.handler",
+                    FunctionName: config.workerLambdaFunctionName,
+                    Handler: "lambda-worker.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
@@ -498,7 +398,7 @@ function createFimsAmeProcessorLambdaFunction(callback) {
                     Timeout: 30
                 };
                 lambda.createFunction(params, function (err, data) {
-                    lambdaProcessorFunction = data;
+                    workerlambdaFunction = data;
                     callback(err);
                 });
             }
@@ -506,59 +406,59 @@ function createFimsAmeProcessorLambdaFunction(callback) {
     ], callback);
 }
 
-function deleteFimsAmeProcessorLambdaFunction(callback) {
+function deleteWorkerLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            console.log("Searching for function '" + config.workerLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                if (config.workerLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Deleting function '" + config.lambdaProcessorFunctionName + "'");
-                var params = { FunctionName: config.lambdaProcessorFunctionName };
+                console.log("Deleting function '" + config.workerLambdaFunctionName + "'");
+                var params = { FunctionName: config.workerLambdaFunctionName };
                 lambda.deleteFunction(params, function (err, data) {
                     callback(err)
                 });
             } else {
-                console.log("Function '" + config.lambdaProcessorFunctionName + "' not found");
+                console.log("Function '" + config.workerLambdaFunctionName + "' not found");
                 callback();
             }
         }
     ], callback);
 }
 
-function updateFimsAmeProcessorLambdaFunction(callback) {
+function updateWorkerLambdaFunction(callback) {
     async.waterfall([
         function (callback) {
-            console.log("Searching for function '" + config.lambdaProcessorFunctionName + "'");
+            console.log("Searching for function '" + config.workerLambdaFunctionName + "'");
             lambda.listFunctions(callback);
         },
         function (data, callback) {
             var func = null;
             data.Functions.forEach(f => {
-                if (config.lambdaProcessorFunctionName === f.FunctionName) {
+                if (config.workerLambdaFunctionName === f.FunctionName) {
                     func = f;
                 }
             });
             if (func) {
-                console.log("Updating code of function '" + config.lambdaProcessorFunctionName + "'");
+                console.log("Updating code of function '" + config.workerLambdaFunctionName + "'");
                 var params = {
-                    ZipFile: fs.readFileSync(FIMS_AME_PROCESSOR_PACKAGE_FILE),
-                    FunctionName: config.lambdaProcessorFunctionName,
+                    ZipFile: fs.readFileSync(WORKER_LAMBDA_PACKAGE_FILE),
+                    FunctionName: config.workerLambdaFunctionName,
                     Publish: true
                 }
                 lambda.updateFunctionCode(params, function (err, data) {
-                    lambdaProcessorFunction = data;
+                    workerlambdaFunction = data;
                     callback(err);
                 });
             } else {
-                callback("Not found function '" + config.lambdaProcessorFunctionName + "'");
+                callback("Not found function '" + config.workerLambdaFunctionName + "'");
             }
         }
     ], callback);
@@ -569,10 +469,10 @@ function deployLambda(callback) {
     console.log("=== deployLambda ===");
     async.waterfall([
         createLambdaExecutionRole,
-        createFimsAmeApiPackage,
-        createFimsAmeApiLambdaFunction,
-        createFimsAmeProcessorPackage,
-        createFimsAmeProcessorLambdaFunction
+        createWorkerLambdaPackage,
+        createWorkerLambdaFunction,
+        createRestApiLambdaPackage,
+        createRestApiLambdaFunction
     ], callback);
 }
 
@@ -580,8 +480,8 @@ function undeployLambda(callback) {
     console.log();
     console.log("=== undeployLambda ===");
     async.waterfall([
-        deleteFimsAmeProcessorLambdaFunction,
-        deleteFimsAmeApiLambdaFunction,
+        deleteWorkerLambdaFunction,
+        deleteRestApiLambdaFunction,
         deleteLambdaExecutionRole
     ], callback);
 }
@@ -590,10 +490,10 @@ function updateLambdaCode(callback) {
     console.log();
     console.log("=== updateLambdaCode ===");
     async.waterfall([
-        createFimsAmeApiPackage,
-        updateFimsAmeApiLambdaFunction,
-        createFimsAmeProcessorPackage,
-        updateFimsAmeProcessorLambdaFunction
+        createRestApiLambdaPackage,
+        updateRestApiLambdaFunction,
+        createWorkerLambdaPackage,
+        updateWorkerLambdaFunction
     ], callback);
 }
 
@@ -606,7 +506,7 @@ function createRestAPI(callback) {
     var proxyResource;
     var proxyResourceAnyMethod;
 
-    var lambdaApiFunctionArn = lambdaApiFunction.FunctionArn.substring(0, lambdaApiFunction.FunctionArn.indexOf(config.lambdaApiFunctionName) + config.lambdaApiFunctionName.length)
+    var lambdaApiFunctionArn = restApiLambdaFunction.FunctionArn.substring(0, restApiLambdaFunction.FunctionArn.indexOf(config.restApiLambdaFunctionName) + config.restApiLambdaFunctionName.length)
     var lambdaApiFunctionRegion = lambdaApiFunctionArn.substring(15, lambdaApiFunctionArn.indexOf(":", 16));
     var lambdaApiFunctionAccountId = lambdaApiFunctionArn.substring(15 + lambdaApiFunctionRegion.length + 1, lambdaApiFunctionArn.indexOf(":", 15 + lambdaApiFunctionRegion.length + 2));
 
@@ -621,8 +521,6 @@ function createRestAPI(callback) {
         function (data, callback) {
             data.items.forEach(r => {
                 if (r.name === config.restApiName) {
-                    // if (r.name === "myFirstAPI") {
-                    // if (r.name === "FIMSRepo") {
                     restApi = r;
                 }
             });
@@ -743,7 +641,7 @@ function createRestAPI(callback) {
             console.log("Searching for lambda policy allowing invocation by API Gateway");
 
             var params = {
-                FunctionName: config.lambdaApiFunctionName
+                FunctionName: config.restApiLambdaFunctionName
             }
             lambda.getPolicy(params, function (err, data) {
                 var policyPresent = false;
@@ -771,7 +669,7 @@ function createRestAPI(callback) {
 
                     var params = {
                         Action: "lambda:InvokeFunction",
-                        FunctionName: config.lambdaApiFunctionName,
+                        FunctionName: config.restApiLambdaFunctionName,
                         Principal: "apigateway.amazonaws.com",
                         SourceArn: restApiExecutionArn,
                         StatementId: restApi.id + "-" + config.restApiName
@@ -873,42 +771,6 @@ function undeployGateway(callback) {
 }
 
 //////////////////////////////
-//      Dynamo Trigger      //
-//////////////////////////////
-
-function deployDynamoTrigger(callback) {
-    async.waterfall([
-        function (callback) {
-            console.log("Searching for Dynamo Trigger");
-            var params = {
-                EventSourceArn: dynamoTable.LatestStreamArn,
-                FunctionName: config.lambdaProcessorFunctionName
-            };
-            lambda.listEventSourceMappings(params, callback);
-        },
-        function (data, callback) {
-            if (data.EventSourceMappings.length > 0) {
-                console.log("Found Dynamo Trigger");
-                callback();
-            } else {
-                console.log("Creating Dynamo Trigger");
-                var params = {
-                    EventSourceArn: dynamoTable.LatestStreamArn,
-                    FunctionName: config.lambdaProcessorFunctionName,
-                    StartingPosition: "LATEST",
-                    BatchSize: 1,
-                    Enabled: true
-                }
-                console.log(params);
-                lambda.createEventSourceMapping(params, function (err, data) {
-                    callback(err);
-                });
-            }
-        },
-    ], callback);
-}
-
-//////////////////////////////
 //         Installer        //
 //////////////////////////////
 console.log("Starting");
@@ -924,26 +786,15 @@ var functions = [];
 
 switch (command) {
     case "deploy":
-        functions.push(deployDynamo);
         functions.push(deployLambda);
-        functions.push(deployDynamoTrigger);
         functions.push(deployGateway);
         break;
     case "undeploy":
         functions.push(undeployGateway);
         functions.push(undeployLambda);
-        functions.push(undeployDynamo);
         break;
     case "updateLambdaCode":
         functions.push(updateLambdaCode);
-        break;
-    case "deployLocal":
-        functions.push(configDynamoLocal);
-        functions.push(deployDynamo);
-        break;
-    case "undeployLocal":
-        functions.push(configDynamoLocal);
-        functions.push(undeployDynamo);
         break;
 }
 

@@ -2,8 +2,6 @@
 
 var request = require("request");
 
-var constants = require("./constants.js");
-
 function processObject(object, searchValue, replaceValue, cache) {
     var type = typeof object;
 
@@ -19,7 +17,9 @@ function processObject(object, searchValue, replaceValue, cache) {
             if (cache.indexOf(object) <= 0) {
                 cache.push(object);
                 for (var prop in object) {
-                    object[prop] = processObject(object[prop], searchValue, replaceValue, cache);
+                    if (prop !== "@context") {
+                        object[prop] = processObject(object[prop], searchValue, replaceValue, cache);
+                    }
                 }
             }
             break;

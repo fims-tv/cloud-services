@@ -3,8 +3,8 @@ console.log('Loading function');
 
 var async = require("async");
 var jsonld = require("jsonld");
-var constants = require("./constants.js");
-var bal = require("./fims-business-layer.js");
+var constants = require("./lambda-constants.js");
+var bal = require("./lambda-business-layer.js");
 
 exports.handler = (event, context, callback) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
@@ -270,5 +270,3 @@ var customLoader = function (url, callback) {
     nodeDocumentLoader(url, callback);
 };
 jsonld.documentLoader = customLoader;
-
-console.log("End of loading fims-api-layer.js");

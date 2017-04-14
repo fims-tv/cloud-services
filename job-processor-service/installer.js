@@ -42,10 +42,6 @@ var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
 
 var lambdaExecutionRole = null;
 
-const policyAmazonDynamoDBFullAccess = {
-    PolicyName: "AmazonDynamoDBFullAccess",
-    PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-};
 const policyAWSLambdaExecute = {
     PolicyName: "AWSLambdaExecute",
     PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaExecute"
@@ -122,10 +118,7 @@ function createLambdaExecutionRole(callback) {
             attachedPolicies = data.AttachedPolicies;
 
             attachRolePolicy(lambdaExecutionRole, policyAWSLambdaExecute, attachedPolicies, callback);
-        },
-        function (callback) {
-            attachRolePolicy(lambdaExecutionRole, policyAmazonDynamoDBFullAccess, attachedPolicies, callback);
-        },
+        }
     ], callback);
 }
 
@@ -211,11 +204,11 @@ function createLambdaPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("constants.js");
-    archive.file("fims-api-layer.js");
-    archive.file("fims-business-layer.js");
-    archive.file("fims-data-access-layer.js");
-    archive.file("fims-repository.js");
+    archive.file("lambda-business-layer.js");
+    archive.file("lambda-constants.js");
+    archive.file("lambda-data-access-layer.js");
+    archive.file("lambda-repository.js");
+    archive.file("lambda-rest-api.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/jsonld/");
     archive.directory("node_modules/request/");
@@ -254,13 +247,13 @@ function createLambdaFunction(callback) {
                         ZipFile: fs.readFileSync(LAMBDA_PACKAGE_FILE)
                     },
                     FunctionName: config.lambdaApiFunctionName,
-                    Handler: "fims-api-layer.handler",
+                    Handler: "lambda-rest-api.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
                     MemorySize: 128,
                     Publish: true,
-                    Timeout: 3
+                    Timeout: 30
                 };
                 lambda.createFunction(params, function (err, data) {
                     lambdaApiFunction = data;
