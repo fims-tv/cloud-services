@@ -8,19 +8,21 @@ const async = require("async");
 //const querystring = require('querystring');
 
 const CREDENTIALS_FILE = "./credentials.json";
-const JOB_API_NAME = "fims-job-repo"
-const JOB_API_STAGE_NAME = "dev"
-const JOB_API_REGION = "us-west-2"
-const JOB_API_PATH = '/Job'
+const JOB_API_NAME = "fims-job-processor-rest-api"
+const JOB_API_STAGE_NAME = "test"
+const JOB_API_REGION = "us-east-1"
+const JOB_API_PATH = '/AmeJob'
 
-const JOB_PAYLOAD = '{"@context":"https://job-repository/context/default","type":"","jobProfile":{"label":"ExtractTechnicalMetadata","type":"JobProfile"},"hasRelatedResource":{"type":"BMEssence","locator":""}}'
+const JOB_PAYLOAD = '{"@context":"https://job-repository/context/default","type":"","jobProfile":{"label":"ExtractTechnicalMetadata","type":"JobProfile"},"hasRelatedResource":{"type":"BMEssence","locator":""},"outputFile":""}'
 
 const JobType = {
   AME: "AmeJob",
-  TRANSFORM: "TransformJob",
-  TRANSFER:  "TransferJob",
+  LOWRES: "Transform-LowRes",
+  THUMBNAIL:  "Transform-Thumbnail",
 };
 
+// CHANGE HERE
+const JobTypeVar = JobType.AME
 
 if (fs.existsSync(CREDENTIALS_FILE)) {
     AWS.config.loadFromPath(CREDENTIALS_FILE);
@@ -41,7 +43,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
 } else {
     exports.handler = (event, context, callback) => {
         console.log("event.payload = " + JSON.stringify(event.payload)); 
-        createJob(callback);           
+        createJob(event, callback);           
     }
 }
 
@@ -68,10 +70,12 @@ function hitGet(url) {
 }
 
 // https://github.com/fims-tv/aws-services/blob/develop/README.md#payload-messages
-function hitPost(callback, url) {
+function hitPost(event, callback, url) {
     // prep job payload
-    var jobPayload = JOB_PAYLOAD.replace('"type":""', '"type":"'+ JobType.AME + '"').replace('"locator":""', '"locator":"S3:/TEST.MXF"');
-    
+    var jobPayload = JOB_PAYLOAD.replace('"type":""', '"type":"'+ JobTypeVar + '"')
+                                .replace('"locator":""', '"locator":"'+ event.worflow_param.essence_url + '"')
+                                .replace('"outputFile":""', '"outputFile":"'+ event.worflow_param.essence_url + '.metadata.jsonld"');
+    console.log(jobPayload)
     request.post(
         url + JOB_API_PATH,
         jobPayload,
@@ -80,9 +84,18 @@ function hitPost(callback, url) {
                 console.log('SUCCESS - extract jobID')
                 console.log(body)
                 // response context
-                var jsonEnvelop = {}
+
                 var parsed = JSON.parse(body);
-                jsonEnvelop.jobURL = parsed.id
+                var jobURL = parsed.id
+
+                var worflowParam = event.worflow_param;    
+                worflowParam.job_url = jobURL
+                
+                var jsonEnvelop = {};
+                jsonEnvelop.payload = event.payload;
+                jsonEnvelop.worflow_param = {};
+                jsonEnvelop.worflow_param = worflowParam;     
+
                 callback(null, jsonEnvelop)      
             } else {
                 console.log('ERROR')
@@ -94,7 +107,7 @@ function hitPost(callback, url) {
     
 }
 
-function createJob(callback) {
+function createJob(event, callback) {
 
     var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
     var restApi;
@@ -143,7 +156,7 @@ function createJob(callback) {
             console.log("AWS endpoint: " + endpoint);
             callback();
         }, function (callback) {
-            hitPost(callback, endpoint)
+            hitPost(event, callback, endpoint)
         }
     ], callback);
 }

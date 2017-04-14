@@ -45,6 +45,30 @@ const policyAWSStepFunction = {
     PolicyArn: "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
 };
 
+const AWSLambdaFullAccess = {
+    PolicyName: "AWSLambdaFullAccess",
+    PolicyArn: "arn:aws:iam::aws:policy/AWSLambdaFullAccess"
+};
+
+const AmazonS3FullAccess = {
+    PolicyName: "AmazonS3FullAccess",
+    PolicyArn: "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+};
+
+const AmazonAPIGatewayInvokeFullAccess = {
+    PolicyName: "AmazonAPIGatewayInvokeFullAccess",
+    PolicyArn: "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
+};
+const AmazonDynamoDBFullAccess = {
+    PolicyName: "AmazonDynamoDBFullAccess",
+    PolicyArn: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+};
+const AmazonAPIGatewayAdministrator = {
+    PolicyName: "AmazonAPIGatewayAdministrator",
+    PolicyArn: "arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator"
+};
+
+
 function attachRolePolicy(role, requiredPolicy, currentPolicies, callback) {
     var policy = null;
 
@@ -115,7 +139,17 @@ function createStepFunctionExecutionRole(callback) {
         function (data, callback) {
             attachedPolicies = data.AttachedPolicies;
             attachRolePolicy(lambdaExecutionRole, policyAWSStepFunction, attachedPolicies, callback);
-        },
+        }, function (callback) {
+            attachRolePolicy(lambdaExecutionRole, AWSLambdaFullAccess, attachedPolicies, callback);
+       }, function (callback) {
+            attachRolePolicy(lambdaExecutionRole, AmazonS3FullAccess, attachedPolicies, callback);
+        }, function (callback) {
+            attachRolePolicy(lambdaExecutionRole, AmazonAPIGatewayInvokeFullAccess, attachedPolicies, callback);
+        }, function (callback) {
+            attachRolePolicy(lambdaExecutionRole, AmazonDynamoDBFullAccess, attachedPolicies, callback);
+        }, function (callback) {
+            attachRolePolicy(lambdaExecutionRole, AmazonAPIGatewayAdministrator, attachedPolicies, callback);
+        }
     ], callback);
 }
 
@@ -215,7 +249,8 @@ function deployStepFunction(callback) {
                     },
                     function (data, callback) {
                         var accountID = data.User.Arn.split(':')[4]
-                        var def = fs.readFileSync('fims-state-machine.json', 'utf8')
+                        console.log("accountID " + accountID)
+                        var def = fs.readFileSync(config.workflowStateMachineFileName, 'utf8')
                         var cred = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf8'));
                         def = replaceAll(def, REGION, cred.region)
                         def = replaceAll(def, ACCOUNT_ID, accountID)
@@ -293,7 +328,7 @@ switch (command) {
         functions.push(deployStepFunction);
         break;
     case "undeploy":
-        functions.push(deleteStepFunctionExecutionRole);
+        //functions.push(deleteStepFunctionExecutionRole);
         functions.push(undeployStepFunction);
         break;
 }
