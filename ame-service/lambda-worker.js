@@ -11,6 +11,7 @@ var async = require("async");
 var uuid = require("uuid");
 var xml2js = require("xml2js");
 
+var constants = require("./lambda-constants.js");
 var bal = require("./lambda-business-layer.js");
 
 process.env["PATH"] = process.env["PATH"] + ":" + process.env["LAMBDA_TASK_ROOT"] + "/bin";
@@ -27,6 +28,7 @@ exports.handler = (input, context, callback) => {
     doProcessJob(event, processJob, callback);
 };
 
+exports.generateOutput = generateOutput;
 
 function doProcessJob(event, processJob, callback) {
     if (!s3) {
@@ -119,7 +121,7 @@ function doProcessJob(event, processJob, callback) {
         },
         function (callback) {
             console.log("Processing xml");
-            return xml2js.parseString(mediainfoOutput, { explicitArray: false, async: true }, callback);
+            return xml2js.parseString(mediainfoOutput, { explicitArray: true, async: true }, callback);
         },
         function (result, callback) {
             console.log("Extracting metadata from: ");
@@ -129,6 +131,8 @@ function doProcessJob(event, processJob, callback) {
                 return callback("OutputFile missing");
             }
 
+            var output = generateOutput(result)
+
             var bucket = job.outputFile.substring(job.outputFile.indexOf("/", 8) + 1);
             var key = bucket.substring(bucket.indexOf("/") + 1);
             bucket = bucket.substring(0, bucket.indexOf("/"));
@@ -137,7 +141,7 @@ function doProcessJob(event, processJob, callback) {
             var params = {
                 Bucket: bucket,
                 Key: key,
-                Body: JSON.stringify(result, null, 2)
+                Body: JSON.stringify(output, null, 2)
             };
             return s3.putObject(params, callback)
         },
@@ -179,9 +183,156 @@ function extractMetadata(obj, path, defaultValue) {
     return obj;
 }
 
-function addToReport(report, propertyName, value) {
-    if (value !== undefined) {
-        report.technicalMetadata[propertyName] = value;
-    }
-}
+function generateOutput(input) {
 
+    output = {};
+
+    output["@context"] = constants.CONTEXTS[constants.EXPORT_CONTEXT]["@context"],
+    output["@type"] = "ebucore:BMEssence";
+    output["ebucore:hasVideoFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/$/videoFormatName"),
+        output["ebucore:frameWidth"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:width/0/_"),
+        output["ebucore:frameHeight"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:height/0/_"),
+        output["ebucore:frameRate"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:frameRate/0/$/factorNumerator") + "/" + extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:frameRate/0/$/factorDenominator"),
+        output["ebucore:displayAspectRatio"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:aspectRatio/0/ebucore:factorNumerator") + ":" + extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:aspectRatio/0/ebucore:factorDenominator"),
+        output["ebucore:hasVideoEncodingFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:videoEncoding/0/$/typeLabel"),
+        output["ebucore:hasVideoCodec"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:codec/0/ebucore:codecIdentifier/0/dc:identifier/0"),
+        output["ebucore:videoBitRate"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:bitRate/0"),
+        output["ebucore:videoBitRateMax"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:bitRateMax/0"),
+        output["ebucore:videoBitRateMode"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:bitRateMode/0"),
+        output["ebucore:scanningFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:scanningFormat/0"),
+        output["ebucore:hasVideoTrack"] = {
+            "@type": "ebucore:VideoTrack",
+            "ebucore:trackNumber": extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:videoTrack/0/$/trackId")
+        };
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeString/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeString/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "Standard":
+            case "ColorSpace":
+            case "ChromaSubSampling":
+            case "colour_primaries":
+            case "transfer_characteristics":
+            case "matrix_coefficients":
+            case "transfer_characteristics":
+            case "colour_range":
+                output["mediaInfo:" + technicalAttributeName] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeInteger/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeInteger/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "StreamSize":
+                output["mediaInfo:Video" + technicalAttributeName] = technicalAttributeValue;
+                break;
+            case "BitDepth":
+                output["mediaInfo:" + technicalAttributeName] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeBoolean/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:videoFormat/0/ebucore:technicalAttributeBoolean/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "CABAC":
+            case "MBAFF":
+                output["mediaInfo:" + technicalAttributeName] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    output["ebucore:hasAudioFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/$/audioFormatName");
+    output["ebucore:hasAudioEncodingFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:audioEncoding/0/$/typeLabel");
+    output["ebucore:hasAudioCodec"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:codec/0/ebucore:codecIdentifier/0/dc:identifier/0");
+    output["ebucore:sampleRate"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:samplingRate/0");
+    output["ebucore:audioBitRate"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:bitRate/0");
+    output["ebucore:audioBitRateMax"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:bitRateMax/0");
+    output["ebucore:audioBitRateMode"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:bitRateMode/0");
+    output["ebucore:hasAudioTrack"] = {
+        "@type": "ebucore:AudioTrack",
+        "trackId": extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:audioTrack/0/$/trackId"),
+        "hasLanguage": extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:audioTrack/0/$/trackLanguage")
+    }
+    output["ebucore:audioChannelNumber"] = extractMetadata(input, "ebucore:ebuCoreMain/0/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:channels/0");
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:technicalAttributeString/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:technicalAttributeString/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "ChannelPositions":
+            case "ChannelLayout":
+                output["mediaInfo:" + technicalAttributeName] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:technicalAttributeInteger/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:audioFormat/0/ebucore:technicalAttributeInteger/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "StreamSize":
+                output["mediaInfo:Audio" + technicalAttributeName] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    output["ebucore:hasContainerFormat"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:containerFormat/0/$/containerFormatName");
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:containerFormat/0/ebucore:technicalAttributeString/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:containerFormat/0/ebucore:technicalAttributeString/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "FormatProfile":
+                output["ebucore:hasContainerEncodingFormat"] = technicalAttributeValue;
+                break;
+        }
+    }
+
+    output["ebucore:hasContainerCodec"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:containerFormat/0/ebucore:codec/0/ebucore:codecIdentifier/0/dc:identifier/0");
+
+    output["ebucore:durationNormalPlayTime"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:duration/0/ebucore:normalPlayTime/0");
+    output["ebucore:fileSize"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:fileSize/0");
+    output["ebucore:fileName"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:fileName/0");
+
+    for (var i = 0; ; i++) {
+        var technicalAttributeValue = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:technicalAttributeInteger/" + i + "/_");
+        var technicalAttributeName = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:technicalAttributeInteger/" + i + "/$/typeLabel");
+        if (!technicalAttributeValue || !technicalAttributeName) {
+            break;
+        }
+        switch (technicalAttributeName) {
+            case "OverallBitRate":
+                output["ebucore:bitRateOverall"] = technicalAttributeValue;
+                break;
+        }
+    }
+
+
+    output["ebucore:dateCreated"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:dateCreated/0/$/startDate") + "T" + extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:dateCreated/0/$/startTime");
+    output["ebucore:dateModified"] = extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:dateModified/0/$/startDate") + "T" + extractMetadata(input, "ebucore:ebuCoreMain/ebucore:coreMetadata/0/ebucore:format/0/ebucore:dateModified/0/$/startTime");
+
+    return output;
+}
