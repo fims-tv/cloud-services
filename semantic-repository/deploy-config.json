@@ -1,0 +1,6 @@
+{
+    "lambdaExecutionRoleName": "fims-semantic-repo-lambda-execution-role",
+    "lambdaApiFunctionName": "fims-semantic-repo-jsontransform-api-lambda-function",
+    "restApiName": "FIMS-PIlot-MapJsonToNQuadAndPostToAPIGateway",
+    "restApiStageName": "test"
+}
