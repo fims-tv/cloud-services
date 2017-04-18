@@ -1,0 +1,154 @@
+{
+	"Comment": "FIMS DEMO",
+	"StartAt": "ValidateMetadata",
+	"States": {
+		"ValidateMetadata": {
+			"Type": "Task",
+      		"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ValidateMetadata",
+			"Next": "CopyEssenceToPrivateBucket"
+		},
+		"CopyEssenceToPrivateBucket": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-2-CopyEssenceToPrivateBucket",
+			"Next": "RemoveIngestFromPublicBucket"
+		},
+		"RemoveIngestFromPublicBucket": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-3-RemoteIngestFromPublicBucket",
+			"Next": "AME-Job"
+		},
+		"AME-Job": {
+			"Type": "Parallel",
+			"Next": "CreateAssetMediaRepo",
+			"Branches": [{
+					"Comment": "Process Job API Gateway",
+					"StartAt": "Process-AME-Job",
+					"States": {
+						"Process-AME-Job": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"TimeoutSeconds": 3600,
+							"End": true
+						}
+					}
+				}, {
+					"StartAt": "Wait-AME-5s",
+					"States": {
+						"Wait-AME-5s": {
+							"Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+							"Type": "Wait",
+							"Seconds": 2,
+							"Next": "Create-AME-Job"
+						},
+						"Create-AME-Job": {
+							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+							"Type": "Task",
+							"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ame-create-job",
+							"Next": "Start-AME-Job"
+						},
+						"Start-AME-Job": {
+							"Comment": "Task responsible to start the job",
+							"Type": "Task",
+							"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ame-start-job",
+							"End": true
+						}
+					}
+				}
+			]
+		},
+		"CreateAssetMediaRepo": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-4-createMediaRepo",
+			"Next": "Transform-LowRes-Job"
+		},
+		"Transform-LowRes-Job": {
+			"Type": "Parallel",
+			"Next": "Transform-Thumbnail-Job",
+			"Branches": [{
+					"Comment": "Process Job API Gateway",
+					"StartAt": "Process-LowRes-Job",
+					"States": {
+						"Process-LowRes-Job": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"TimeoutSeconds": 3600,
+							"End": true
+						}
+					}
+				}, {
+					"StartAt": "Wait-LowRes-5s",
+					"States": {
+						"Wait-LowRes-5s": {
+							"Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+							"Type": "Wait",
+							"Seconds": 5,
+							"Next": "Create-LowRes-Job"
+						},
+						"Create-LowRes-Job": {
+							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Next": "Start-LowRes-Job"
+						},
+						"Start-LowRes-Job": {
+							"Comment": "Task responsible to start the job",
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"End": true
+						}
+					}
+				}
+			]
+		},
+		"Transform-Thumbnail-Job": {
+			"Type": "Parallel",
+			"Next": "UpdateMediaRepo",
+
+			"Branches": [{
+					"Comment": "Process Job API Gateway",
+					"StartAt": "Process-Thumbnail-Job",
+					"States": {
+						"Process-Thumbnail-Job": {
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"TimeoutSeconds": 3600,
+							"End": true
+						}
+					}
+				}, {
+					"StartAt": "Wait-Thumbnail-5s",
+					"States": {
+						"Wait-Thumbnail-5s": {
+							"Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+							"Type": "Wait",
+							"Seconds": 5,
+							"Next": "Create-Thumbnail-Job"
+						},
+						"Create-Thumbnail-Job": {
+							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Next": "Start-Thumbnail-Job"
+						},
+						"Start-Thumbnail-Job": {
+							"Comment": "Task responsible to start the job",
+							"Type": "Task",
+							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"End": true
+						}
+					}
+				}
+			]
+		},
+
+		"UpdateMediaRepo": {
+			"Type": "Pass",
+			"Next": "CreateAssetSemanticRepo"
+		},
+		"CreateAssetSemanticRepo": {
+			"Comment": "Push the Asset in RDF4J Semantic Repository",
+			"Type": "Pass",
+			"End": true
+		}
+	}
+}
