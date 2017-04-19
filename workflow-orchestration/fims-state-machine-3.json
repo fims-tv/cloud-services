@@ -14,7 +14,7 @@
 		},
 		"RemoveIngestFromPublicBucket": {
 			"Type": "Task",
-            "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-3-RemoveIngestFromPublicBucket",
+			"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-3-RemoveIngestFromPublicBucket",
 			"Next": "AME-Job"
 		},
 		"AME-Job": {
@@ -37,7 +37,7 @@
 						"Wait-AME-5s": {
 							"Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
 							"Type": "Wait",
-							"Seconds": 5,
+							"Seconds": 2,
 							"Next": "Create-AME-Job"
 						},
 						"Create-AME-Job": {
@@ -57,7 +57,8 @@
 			]
 		},
 		"CreateAssetMediaRepo": {
-			"Type": "Pass",
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-4-createMediaRepo",
 			"Next": "Transform-LowRes-Job"
 		},
 		"Transform-LowRes-Job": {

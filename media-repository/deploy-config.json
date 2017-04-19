@@ -1,0 +1,8 @@
+{
+    "TableName": "media-repo",
+    "lambdaExecutionRoleName": "fims-media-repo-lambda-execution-role",
+    "lambdaApiFunctionName": "fims-media-repo-api-lambda-function",
+    "lambdaProcessorFunctionName": "fims-ame-processor-lambda-function",
+    "restApiName": "fims-media-repo-rest-api",
+    "restApiStageName": "test"
+}

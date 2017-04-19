@@ -1,0 +1,101 @@
+
+
+// Sample 1
+{
+    "@context": {
+        "ebucore": "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#",
+        "esc": "http://www.eurovision.com#",
+        "fims": "http://fims.tv#",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+        "dateCreated": {
+            "@id": "ebucore:dateCreated",
+            "@type": "xsd:dateTime"
+        },
+        "dateModified": {
+            "@id": "ebucore:dateModified",
+            "@type": "xsd:dateTime"
+        },
+        "id": "@id",
+        "type": "@type",
+        "label": "rdfs:label",
+        "BMEssence": "ebucore:BMEssence",
+        "BMContent": "ebucore:BMContent",
+        "hasRelatedResource": {
+            "@id": "ebucore:hasRelatedResource",
+            "@type": "@id"
+        },
+        "locator": {
+            "@id": "ebucore:locator",
+            "@type": "xsd:anyURI"
+        }
+    },
+    "type": "BMContent",
+    "rdfs:label": "Eurovision Song Contest 2015, Austria",
+    "ebucore:dateCreated": "2015-05-23T21:00:00",
+    "ebucore:dateModified": "2015-05-23T21:00:00",
+    "ebucore:title": "Eurovision Song Contest 2015 Grand Final",
+    "esc:orderOk": "1",
+    "esc:resultsKnown": "1",
+    "esc:votingRules": " Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ",
+    "ebucore:date": "2015-05-23T21:00:00",
+    "ebucore:hasPart": []
+}
+
+
+
+
+
+
+//Sample 2
+{
+    "@context": {
+        
+        "dc": "http://purl.org/dc/elements/1.1/",
+        "default": "urn:ebu:metadata-schema:ebuCore_2012",
+        "ebu": "http://ebu.org/nar-extensions/",
+        "ebucore": "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#",
+        "fims": "http://fims.tv#",
+        "owl": "http://www.w3.org/2002/07/owl#",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+
+        "dateCreated": {
+            "@id": "ebucore:dateCreated",
+            "@type": "xsd:dateTime"
+        },
+        "dateModified": {
+            "@id": "ebucore:dateModified",
+            "@type": "xsd:dateTime"
+        },
+        "id": "@id",
+        "type": "@type",
+        "label": "rdfs:label",
+        "BMEssence": "ebucore:BMEssence",
+        "BMContent": "ebucore:BMContent",
+        "hasRelatedResource": {
+            "@id": "ebucore:hasRelatedResource",
+            "@type": "@id"
+        },
+        "locator": {
+            "@id": "ebucore:locator",
+            "@type": "xsd:anyURI"
+        }
+    },
+
+    "type": "BMContent",
+    "rdfs:label": "Loic Test1",
+    "ebucore:dateCreated": "2015-05-23T21:00:00",
+    "ebucore:dateModified": "2015-05-23T21:00:00",
+    "ebucore:title": "Loic Test1",
+    "esc:orderOk": "1",
+    "esc:resultsKnown": "1",
+    "esc:votingRules": " Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ",
+    "ebucore:date": "2015-05-23T21:00:00",
+    "ebucore:hasPart": []
+
+}

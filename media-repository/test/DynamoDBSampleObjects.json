@@ -1,0 +1,20 @@
+
+
+
+
+
+//BMContent
+
+{
+  "resource": {
+    "id": "1234567",
+    "title": "Loic test simple asset",
+    "type": "BMContent"
+  },
+  "resource_id": "1234567",
+  "resource_type": "BMContent"
+}
+
+
+
+

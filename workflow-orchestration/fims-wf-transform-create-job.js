@@ -13,63 +13,17 @@ const JOB_API_STAGE_NAME = "test"
 const JOB_API_REGION = "us-east-1"
 
 const DEFAULT_CONTEXT = '/context/default'
-const JOB_PAYLOAD = '{"@context":"","type":"","jobProfile":{"label":"ExtractTechnicalMetadata","type":"JobProfile"},"hasRelatedResource":{"type":"BMEssence","locator":""},"outputFile":""}'
 
 const JobType = {
   AME: {name: "AmeJob", path: '/AmeJob'},
-  LOWRES: {name: "Transform-LowRes", path: "LowRes"},
-  THUMBNAIL:  "Transform-Thumbnail",
+  TRANSFORM: {name: "TranscodeJob", path: "/TranscodeJob"}
+  //,  THUMBNAIL:  "Transform-Thumbnail",
 };
 
 // CHANGE HERE
-const JOB_TYPE = JobType.AME.name
-const JOB_API_PATH = JobType.AME.path
-
-// if (fs.existsSync(CREDENTIALS_FILE)) {
-//     AWS.config.loadFromPath(CREDENTIALS_FILE);
-    
-//     // if (!AWS.config.region) {
-//     //     AWS.config.update({region: 'us-west-2'});
-//     // }
-//     // exports.AWS = AWS;
-
-//     createJob(function (err) {
-//         if (err) {
-//             console.log();
-//             console.log("ERROR:");
-//             console.error(err);
-//         }
-//     });
-
-//     request.post({
-//         headers: {'Content-Type' : 'application/json'},
-//         url:     'https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/AmeJob',
-//         body:    '{"@context":"https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/context/default","type":"AmeJob","jobProfile":{"label":"ExtractTechnicalMetadata","type":"JobProfile"},"hasRelatedResource":{"type":"BMEssence","locator":"https://s3.amazonaws.com/private-fims-nab/ingested_1492283039083_2015_GF_ORF_00_00_00_conv.mp4"},"outputFile":"https://s3.amazonaws.com/private-fims-nab/ingested_1492283039083_2015_GF_ORF_00_00_00_conv.mp4.metadata.jsonld"}'
-//         },
-//         function (error, response, body) {
-//             if (!error && ( response.statusCode == 200 || response.statusCode == 201 )) {
-//                 console.log('SUCCESS - extract jobID')
-//                 //console.log(body)
-
-//                 var jobURL = JSON.parse(body).id
-//                 console.log(jobURL)
-//                 var worflowParam = event.worflow_param;    
-//                 worflowParam.job_url = jobURL
-
-//                 var jsonEnvelop = {};
-//                 jsonEnvelop.payload = event.payload;
-//                 jsonEnvelop.worflow_param = {};
-//                 jsonEnvelop.worflow_param = worflowParam;     
-
-//                 callback(null, jsonEnvelop)      
-//             } else {
-//                 console.log('ERROR')
-//                 console.log(body)
-//                 callback()
-//             }
-//         }
-//  );
-
+const JOB_TYPE = JobType.TRANSFORM.name
+const JOB_API_PATH = JobType.TRANSFORM.path
+const JOB_PAYLOAD = '{"@context":"","type":"","jobProfile":{"label":"TranscodeEssence","type":"JobProfile"},"hasRelatedResource":{"type":"BMEssence","locator":""},"outputFile":""}'
 
 // } else {
     exports.handler = (event, context, callback) => {
@@ -109,31 +63,40 @@ function hitGet(url) {
 // https://github.com/fims-tv/aws-services/blob/develop/README.md#payload-messages
 function hitPost(event, callback, url, nextStep) {
     // prep job payload
-    var jobPayload = JOB_PAYLOAD.replace('"@context":""', '"@context":"'+ (url+DEFAULT_CONTEXT) + '"')
+    var jobPayload = JSON.parse(JOB_PAYLOAD.replace('"@context":""', '"@context":"'+ (url+DEFAULT_CONTEXT) + '"')
                                 .replace('"type":""', '"type":"'+ JOB_TYPE + '"')
-                                .replace('"locator":""', '"locator":"'+ event.worflow_param.essence_url + '"')
-                                .replace('"outputFile":""', '"outputFile":"'+ event.worflow_param.essence_url + '.metadata.jsonld"');
+                                .replace('"locator":""', '"locator":"'+ event.worflow_param.essence_url + '"'));
+    
+    // "outputFile": [ { "type": "proxy", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.MP4" },
+ 	// { "type": "thumbnail", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.PNG" } ]
+    var essenceFile = event.worflow_param.essence_url
+    jobPayload["outputFile"] = [    JSON.parse('{"type":"proxy","path":"' + essenceFile.replace('ingested','proxy') + '"}'),
+                                    JSON.parse('{"type":"thumbnail","path":"' + essenceFile.substr(0, essenceFile.lastIndexOf(".")) + '.png"}')]
 
-    worflowParam.job_output = event.worflow_param.essence_url + '.metadata.jsonld'
+    event.worflow_param.transform_job_output = jobPayload["outputFile"]
 
     console.log('POST to ' + url + JOB_API_PATH)
-    console.log('payload: ' + jobPayload)
+    console.log('payload: ' + JSON.stringify(jobPayload))
 
     async.waterfall([ 
         function (callback) {
             request.post({
                 headers: {'Content-Type' : 'application/json'},
                 url:     url + JOB_API_PATH,
-                body:    jobPayload
+                body:    JSON.stringify(jobPayload)
             }, callback) },
          function (response, body, callback) {
             console.log('JobProcessor replied')
+            console.log(body)
             if ( response.statusCode == 200 || response.statusCode == 201 ) {
                 console.log('SUCCESS - extract jobID')
                 var jobURL = JSON.parse(body).id
                 console.log('jobURL='+jobURL)
                 var worflowParam = event.worflow_param;    
+                
+                // should not override AME job URL below but shortcut to save having to do a different startJob step
                 worflowParam.job_url = jobURL
+                worflowParam.transform_job_url = jobURL
 
                 var jsonEnvelop = {};
                 jsonEnvelop.payload = event.payload;
@@ -142,7 +105,6 @@ function hitPost(event, callback, url, nextStep) {
                 nextStep(jsonEnvelop)      
             } else {
                 console.log('ERROR')
-                console.log(body)
                 callback()
             }
         }
@@ -203,40 +165,3 @@ function createJob(event, callback, nextStep) {
         }
     ], callback);
 }
-
-// function hitPost(url) {
-//     var jobPayload = JOB_PAYLOAD.replace('"type":""', '"type":"'+ JobType.AME + '"').replace('"locator":""', '"locator":"S3:/TEST.MXF"');
-
-//   // Build the post string from an object
-//     var post_data = querystring.stringify({
-//         'compilation_level' : 'ADVANCED_OPTIMIZATIONS',
-//         'output_format': 'json',
-//         'output_info': 'compiled_code',
-//         'warning_level' : 'QUIET',
-//         'js_code' : jobPayload
-//     });
-
-//   // An object of options to indicate where to post to
-//     var post_options = {
-//         host: url,
-//         //port: '80',
-//         path: '/Job',
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/x-www-form-urlencoded',
-//             'Content-Length': Buffer.byteLength(post_data)
-//         }
-//   };
-
-//   // Set up the request
-//   var post_req = http.request(post_options, function(res) {
-//       res.setEncoding('utf8');
-//       res.on('data', function (chunk) {
-//           console.log('Response: ' + chunk);
-//       });
-//   });
-
-//   // post the data
-//   post_req.write(post_data);
-//   post_req.end();
-// }
