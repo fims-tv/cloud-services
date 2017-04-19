@@ -13,7 +13,8 @@
 			"Next": "RemoveIngestFromPublicBucket"
 		},
 		"RemoveIngestFromPublicBucket": {
-			"Type": "Pass",
+			"Type": "Task",
+            "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-3-RemoveIngestFromPublicBucket",
 			"Next": "AME-Job"
 		},
 		"AME-Job": {

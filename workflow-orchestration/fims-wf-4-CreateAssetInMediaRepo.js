@@ -3,37 +3,44 @@ const fs = require('fs');
 const _ = require('underscore');
 const async = require('async');
 
-const REPO_URL_BMCONTENT = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMContent";
-const REPO_URL_BMESSENCE = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMEssence";
-const CREDENTIALS_FILE = "./credentials.json";
+const REPO_URL = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/"
+const BMCONTENT_ENDPT = REPO_URL+"BMContent"
+const BMESSENCE_ENDPT = REPO_URL+"BMEssence"
+
+const CREDENTIALS_FILE = "./credentials.json"
 
 function getBMContent(jsonObj, essenceID) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
-    var bmc = _.findWhere(graph, '{"@type":"ebucore:BMContent"}');
+    var bmc = _.find(function (bm) { return bm['@type'] == 'ebucore:BMContent'});
+    //.findWhere(graph, '{"@type":"ebucore:BMContent"}');
     if ( bmc === null || bmc === undefined) {
         console.error("No BMContent found");
     }
     delete bmc['@id']
     delete bmc["ebucore:hasPart"]
-    bmc["@type"]= "BMContent"
+    bmc['@type']= "BMContent"
     bmc["@context"]= context
 
     if (essenceID)
         bmc["ebucore:hasRelatedResource"] = [JSON.parse('{"@id":"' + essenceID+ '"}')]
     
     var result = JSON.stringify(bmc)
-    result = result
     console.log("Using BMContent: " + result)
     return result;
+}
+
+function getByField(field) { 
+    bmc == 'ebucore:BMEssence'
 }
 
 function getBMEssence(jsonObj) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
-    var bme = _.findWhere(graph, '{"@type":"ebucore:BMEssence"}');
+    var bme = graph.find(function (g) { return g['@type'] == 'ebucore:BMEssence'});
+    //var bme = _.findWhere(graph, '"@type":"ebucore:BMEssence"');
     if ( bme === null || bme === undefined) {
-        console.error("No BMContent found");
+        console.error("No BMEssence found");
     }
     delete bme['@id']
     delete bme['ebucore:hasPart']
@@ -41,7 +48,7 @@ function getBMEssence(jsonObj) {
     bme["@context"]= context
     var result = JSON.stringify(bme)
     console.log("Using BMEssence: " + result)
-    return result;
+    return result
 }
 
 if (fs.existsSync(CREDENTIALS_FILE)) {
@@ -67,10 +74,10 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
     async.waterfall([ 
         function (callback) {
             var bme = getBMEssence(payload)
-            console.log('POST to ' + REPO_URL_BMESSENCE)
+            console.log('POST to ' + BMESSENCE_ENDPT)
             console.log('payload: ' + bme)
             request({
-                url: REPO_URL_BMESSENCE,
+                url: BMESSENCE_ENDPT,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: bme
@@ -84,10 +91,10 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
             callback();
         }, function (callback) {
             var bmc = getBMContent(payload, essenceId)
-            console.log('POST to ' + REPO_URL_BMCONTENT)
+            console.log('POST to ' + BMCONTENT_ENDPT)
             console.log('payload: ' + bmc)
             request({
-                url: REPO_URL_BMCONTENT,
+                url: BMCONTENT_ENDPT,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: bmc

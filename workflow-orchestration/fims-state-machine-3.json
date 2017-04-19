@@ -4,17 +4,17 @@
 	"States": {
 		"ValidateMetadata": {
 			"Type": "Task",
-      		"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ValidateMetadata",
+      		"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-ValidateMetadata",
 			"Next": "CopyEssenceToPrivateBucket"
 		},
 		"CopyEssenceToPrivateBucket": {
 			"Type": "Task",
-			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-2-CopyEssenceToPrivateBucket",
+			"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-2-CopyEssenceToPrivateBucket",
 			"Next": "RemoveIngestFromPublicBucket"
 		},
 		"RemoveIngestFromPublicBucket": {
 			"Type": "Task",
-			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-3-RemoteIngestFromPublicBucket",
+			"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-3-RemoveIngestFromPublicBucket",
 			"Next": "AME-Job"
 		},
 		"AME-Job": {
@@ -26,7 +26,7 @@
 					"States": {
 						"Process-AME-Job": {
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:Process-Job-Completion",
 							"TimeoutSeconds": 3600,
 							"End": true
 						}
@@ -43,13 +43,13 @@
 						"Create-AME-Job": {
 							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
 							"Type": "Task",
-							"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ame-create-job",
+							"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-ame-create-job",
 							"Next": "Start-AME-Job"
 						},
 						"Start-AME-Job": {
 							"Comment": "Task responsible to start the job",
 							"Type": "Task",
-							"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-ame-start-job",
+							"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-ame-start-job",
 							"End": true
 						}
 					}
@@ -58,7 +58,7 @@
 		},
 		"CreateAssetMediaRepo": {
 			"Type": "Task",
-			"Resource": "arn:aws:lambda:us-east-1:866639985401:function:fims-wf-4-createMediaRepo",
+			"Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:fims-wf-4-createMediaRepo",
 			"Next": "Transform-LowRes-Job"
 		},
 		"Transform-LowRes-Job": {
@@ -70,7 +70,7 @@
 					"States": {
 						"Process-LowRes-Job": {
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:Process-Job-Completion",
 							"TimeoutSeconds": 3600,
 							"End": true
 						}
@@ -87,13 +87,13 @@
 						"Create-LowRes-Job": {
 							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:TestActivityLoic",
 							"Next": "Start-LowRes-Job"
 						},
 						"Start-LowRes-Job": {
 							"Comment": "Task responsible to start the job",
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:TestActivityLoic",
 							"End": true
 						}
 					}
@@ -110,7 +110,7 @@
 					"States": {
 						"Process-Thumbnail-Job": {
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:Process-Job-Completion",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:Process-Job-Completion",
 							"TimeoutSeconds": 3600,
 							"End": true
 						}
@@ -127,13 +127,13 @@
 						"Create-Thumbnail-Job": {
 							"Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:TestActivityLoic",
 							"Next": "Start-Thumbnail-Job"
 						},
 						"Start-Thumbnail-Job": {
 							"Comment": "Task responsible to start the job",
 							"Type": "Task",
-							"Resource": "arn:aws:states:us-east-1:866639985401:activity:TestActivityLoic",
+							"Resource": "arn:aws:states:<REGION>:<ACCOUNT_ID>:activity:TestActivityLoic",
 							"End": true
 						}
 					}
