@@ -9,32 +9,12 @@ var path = require("path");
 
 var async = require("async");
 var uuid = require("uuid");
-var xml2js = require("xml2js");
-
-var Q = require('./node_modules/q');
-var transformS3Event = require('./node_modules/lambduh-transform-s3-event');
-var validate = require('./node_modules/lambduh-validate');
-var execute = require('./node_modules/lambduh-execute');
-var s3Download = require('./node_modules/lambduh-get-s3-object');
-var s3Upload = require('./node_modules/lambduh-put-s3-object');
 
 var bal = require("./lambda-business-layer.js");
 
-//process.env["PATH"] = process.env["PATH"] + ":" + process.env["LAMBDA_TASK_ROOT"] + "/bin";
+process.env["PATH"] = process.env["PATH"] + ":" + process.env["LAMBDA_TASK_ROOT"] + "/bin";
 
 var s3;
-
-process.env.PATH = process.env.PATH + ':/tmp/:' + process.env.LAMBDA_TASK_ROOT;
-
-var pathToBash;
-if (!process.env.NODE_ENV || process.env.NODE_ENV != 'testing') {
-  //production -- Not sure that this is relevant. 
-  pathToBash = '/var/task/gif2mp4.sh';
-} else {
-  //local
-  pathToBash = './bin/gif2mp4.sh';
-}
-
 
 exports.handler = (input, context, callback) => {
     var event = input.event;
@@ -46,7 +26,6 @@ exports.handler = (input, context, callback) => {
     doProcessJob(event, processJob, callback);
 };
 
-
 function doProcessJob(event, processJob, callback) {
     if (!s3) {
         s3 = new AWS.S3();
@@ -56,9 +35,8 @@ function doProcessJob(event, processJob, callback) {
     var job;
     var jobProfile;
     var bmEssence;
-    var filename;    
-    var ffmpegOutput;
-    
+    var inputFilename;
+    var outputFilename;
 
     async.waterfall([
         function (callback) {
@@ -89,18 +67,7 @@ function doProcessJob(event, processJob, callback) {
             console.log("Resolving bmEssence");
             bal.get(event, job.hasRelatedResource, callback);
         },
-         function (resource, callback) {
-            //validate the event. 
-           /* .then(function(result) {
-                console.log('Validating S3 event.');
-                console.log(result);
-                return validate(result, {
-                "srcKey": {
-                    endsWith: "\\.gif",
-                    endsWithout: "_\\d+\\.gif",
-                    startsWith: "events/"
-                }*/
-
+        function (resource, callback) {
             console.log(JSON.stringify(resource, null, 2));
             bmEssence = resource;
 
@@ -108,7 +75,7 @@ function doProcessJob(event, processJob, callback) {
             var key = bucket.substring(bucket.indexOf("/") + 1);
             bucket = bucket.substring(0, bucket.indexOf("/"));
 
-            filename = "/tmp/" + key;
+            inputFilename = "/tmp/" + key;
 
             console.log("Retrieving file from bucket '" + bucket + "' with key '" + key + "'");
             var params = {
@@ -116,121 +83,68 @@ function doProcessJob(event, processJob, callback) {
                 Key: key
             };
 
-            //Download the file froms3
-            // console.log('Downloading file from S3');
-            // var safeTempFilepath = path.basename(result.srcKey)
-            // .replace(/^[^a-zA-Z0-9]+/, "");
-            // return s3Download(result, {
-            // srcKey: result.srcKey,
-            // srcBucket: result.srcBucket,
-            // downloadFilepath: '/tmp/' + safeTempFilepath});
-
             return s3.getObject(params, callback)
         },
         function (data, callback) {
             //Write to the temp location.
-            console.log("Writing file to '" + filename + "'");
-            return fs.writeFile(filename, data.Body, callback);
+            console.log("Writing file to '" + inputFilename + "'");
+            return fs.writeFile(inputFilename, data.Body, callback);
         },
-
-        //function (data, callback) {
-            //Not sure why this needs to be done.  Sync vs. async I think. 
-            // var def = Q.defer();
-            // var timeout = 500;
-            // setTimeout(function(){
-            //     console.log('' + timeout + ' milliseconds later....');
-            //     def.resolve(result);
-            // }, 
-            // timeout);
-            // return def.promise;
-        //},
-        function (data, callback){
-            // console.log('Update security setting for running script');
-            // console.log(result);
-            // return execute(result, {
-            //     shell: "cp ./gif2mp4.sh /tmp/.; chmod 755 /tmp/gif2mp4.sh",
-            //     logOutput: "true"
-            // });
-
-            //possible to just merge this step, and the next into one?
-              // Set the path to the mediainfo binary
-              //Make the low res proxy.
+        function (callback) {
             var exe = path.join(__dirname, 'bin/ffmpeg');
             console.log("Path to ffmpeg to '" + exe + "'");
-            
+
+            var args;
+
             // Defining the arguments
-            var args = ["-y -i "+filename+" -c:v libx264 -pix_fmt yuv420p", filename];
+            switch (jobProfile.label) {
+                case "ExtractThumbnail":
+                    outputFilename = inputFilename + ".png";
+                    args = ["-i", inputFilename, "-ss", "00:00:07", "-vframes", "1", outputFilename];
+                    break;
+                case "CreateProxy":
+                    outputFilename = inputFilename + ".mp4";
+                    args = ["-y", "-i", inputFilename, "-c:v", "libx264", "-pix_fmt", "yuv420p", outputFilename];
+                    break;
+                default:
+                    return callback("Unknown jobProfile '" + jobProfile.label + "'");
+            }
 
             // Launch the child process
             childProcess.execFile(exe, args, function (error, stdout, stderr) {
                 if (!error) {
                     if (stderr) {
-                        console.error("Failed to execute ffmpeg");
                         console.error(stderr);
-                        return callback(stderr);
                     }
-
-                    ffmpegOutput = stdout;
-                    console.log(ffmpegOutput);
+                    if (stdout) {
+                        console.log(stdout);
+                    }
                 }
                 return callback(error);
             });
         },
-         function (data, callback){         
-            //Write the low rez proxy out to s3.
-            console.log("Writing file to '" + filename + "'");
-            return fs.writeFile(filename, data.Body, callback);
+        function (callback) {
+            if (!job.outputFile) {
+                return callback("OutputFile missing");
+            }
+
+            var bucket = job.outputFile.substring(job.outputFile.indexOf("/", 8) + 1);
+            var key = bucket.substring(bucket.indexOf("/") + 1);
+            bucket = bucket.substring(0, bucket.indexOf("/"));
+
+            console.log("Storing file in bucket '" + bucket + "' with key '" + key + "'");
+            var params = {
+                Bucket: bucket,
+                Key: key,
+                Body: fs.readFileSync(outputFilename)
+            };
+            return s3.putObject(params, callback)
         },
-        function(data, callback){
-            //Make the png thumbnail.
-            var exe = path.join(__dirname, 'bin/ffmpeg');
-            console.log("Path to ffmpeg to '" + exe + "'");
-
-            // Defining the arguments
-            var args = ["-i "+filename+" -ss 00:00:07 -vframes 1 "+filename+".png", filename];
-
-            // Launch the child process
-            childProcess.execFile(exe, args, function (error, stdout, stderr) {
-                if (!error) {
-                    if (stderr) {
-                        console.error("Failed to execute ffmpeg");
-                        console.error(stderr);
-                        return callback(stderr);
-                    }
-
-                    ffmpegOutput = stdout;
-                    console.log(ffmpegOutput);
-                }
-                return callback(error);
-            });
-        },        
-        function (data, callback){
-            // console.log('Uploading file to s3.');
-            // console.log(result);
-            // return s3Upload(result, {
-            // dstBucket: result.srcBucket,
-            // dstKey: path.dirname(result.srcKey) + "/" + path.basename(result.srcKey, '.gif') + '.mp4',
-            // uploadFilepath: '/tmp/' + path.basename(result.downloadFilepath, '.gif') + '-final.mp4',
-            // });
-            //Upload thumbnail to s3.
-            console.log("Writing file to '" + filename + "'");
-            return fs.writeFile(path.basename(result.downloadFilepath, '.png'), data.Body, callback);
-        },
-        //function (data, callback){
-            // console.log('Removing file that was uploaded.');
-            // console.log(result);
-            // return execute(result, {
-            // shell: "rm " + result.uploadFilepath
-            // });
-        //},
-        function (data, callback){
-            return bal.put(event, job, function (err) {
-                callback(err);
-            });
-        },
-
-    ], 
-        function (processError) {
+        function (data, callback) {
+            console.log("Successfully stored file");
+            return callback();
+        }
+    ], function (processError) {
         if (processError) {
             console.error(processError);
         }
@@ -251,6 +165,4 @@ function doProcessJob(event, processJob, callback) {
         }
         return callback();
     });
-
-  
 }
