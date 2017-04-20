@@ -2,12 +2,14 @@ const request = require('request');
 const fs = require('fs');
 const _ = require('underscore');
 const async = require('async');
+const AWS = require('aws-sdk');
 
 const REPO_URL = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/"
 const BMCONTENT_ENDPT = REPO_URL+"BMContent"
 const BMESSENCE_ENDPT = REPO_URL+"BMEssence"
 
 const CREDENTIALS_FILE = "./credentials.json"
+var s3 = new AWS.S3();
 
 function getBMContent(jsonObj, essenceID) {
     var context = jsonObj["@context"]
@@ -48,7 +50,7 @@ function getBMEssence(jsonObj) {
     bme["@context"]= context
     var result = JSON.stringify(bme)
     console.log("Using BMEssence: " + result)
-    return result
+    return bme
 }
 
 if (fs.existsSync(CREDENTIALS_FILE)) {
@@ -135,16 +137,31 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         }
 
         var essenceID = null;
+        var bme
         async.waterfall([ 
             function (callback) {
-                var bme = getBMEssence(payload)
+                bme = getBMEssence(payload)
+                // add AME info
+                var bucket = worflow_param.ame_output.substring(worflow_param.ame_output.indexOf("/", 8) + 1);
+                var key = bucket.substring(bucket.indexOf("/") + 1);
+                bucket = bucket.substring(0, bucket.indexOf("/"));
+                console.log( "s3.getObject '"+ key+ "' on bucket '"+ bucket + "'" )
+                s3.getObject ( {Bucket: bucket, Key: key}, callback)},
+            function (data, callback) {
+                var ameData = JSON.parse(new Buffer(data.Body).toString("utf8"))
+                console.log( 'ameData: '+ JSON.stringify(ameData) );
+                for (var key in ameData) {
+                    if (key != '@context' && ameData.hasOwnProperty(key)) {
+                        bme[key]= ameData[key];
+                    }
+                }
                 console.log('POST to ' + BMESSENCE_ENDPT)
-                console.log('payload: ' + bme)
+                console.log('payload: ' + JSON.stringify(bme))
                 request({
                     url: BMESSENCE_ENDPT,
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: bme
+                    body: JSON.stringify(bme)
                 }, callback)},
             function (response, body, callback) {
                 console.log("Payload result:", body);
