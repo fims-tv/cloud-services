@@ -16,7 +16,7 @@ const DEFAULT_CONTEXT = '/context/default'
 
 const JobType = {
   AME: {name: "AmeJob", path: '/AmeJob'},
-  TRANSFORM: {name: "TranscodeJob", path: "/TranscodeJob"}
+  TRANSFORM: {name: "TransformJob", path: "/TransformJob"}
   //,  THUMBNAIL:  "Transform-Thumbnail",
 };
 
@@ -38,35 +38,17 @@ const JOB_PAYLOAD = '{"@context":"","type":"","jobProfile":{"label":"TranscodeEs
     }
 // }
 
-function hitGet(url) {
-    url += uuidV4();
-    http.get(url, function(res) {
-    // Will contain the final response
-    var body = '';
-    // Received data is a buffer.
-    // Adding it to our body
-    res.on('data', function(data){
-        body += data;
-    });
-    // After the response is completed, parse it and log it to the console
-    res.on('end', function() {
-        var parsed = JSON.parse(body);
-        console.log(parsed);
-    });
-    })
-    // If any error has occured, log error to console
-    .on('error', function(e) {
-    console.log("Got error: " + e.message);
-    });
-}
-
 // https://github.com/fims-tv/aws-services/blob/develop/README.md#payload-messages
 function hitPost(event, callback, url, nextStep) {
     // prep job payload
-    var jobPayload = JSON.parse(JOB_PAYLOAD.replace('"@context":""', '"@context":"'+ (url+DEFAULT_CONTEXT) + '"')
-                                .replace('"type":""', '"type":"'+ JOB_TYPE + '"')
-                                .replace('"locator":""', '"locator":"'+ event.worflow_param.essence_url + '"'));
-    
+    var jobPayload = JSON.parse(JOB_PAYLOAD)
+    // .replace('"@context":""', '"@context":"'+ (url+DEFAULT_CONTEXT) + '"')
+    // .replace('"type":""', '"type":"'+ JOB_TYPE + '"')
+    // .replace('"locator":""', '"locator":"'+ event.worflow_param.essence_url + '"'));
+    jobPayload['@context'] = url + DEFAULT_CONTEXT
+    jobPayload['type'] = JOB_TYPE
+    jobPayload['hasRelatedResource']['locator'] = event.worflow_param.essence_url
+
     // "outputFile": [ { "type": "proxy", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.MP4" },
  	// { "type": "thumbnail", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.PNG" } ]
     var essenceFile = event.worflow_param.essence_url
@@ -105,7 +87,9 @@ function hitPost(event, callback, url, nextStep) {
                 nextStep(jsonEnvelop)      
             } else {
                 console.log('ERROR')
-                callback()
+                //callback()
+                var jsonEnvelop = { payload: event.payload, worflow_param: event.worflow_param }   
+                nextStep(jsonEnvelop) 
             }
         }
     ]);

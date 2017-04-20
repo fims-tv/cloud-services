@@ -3,33 +3,10 @@ const fs = require('fs');
 const _ = require('underscore');
 const async = require('async');
 
-const REPO_URL_BMCONTENT = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMContent";
-const REPO_URL_BMESSENCE = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMEssence";
+const REPO_URL = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/"
+const REPO_URL_BMCONTENT = REPO_URL+"BMContent"
+const REPO_URL_BMESSENCE = REPO_URL+"BMEssence"
 const CREDENTIALS_FILE = "./credentials.json";
-
-
-
-
-function getBMContent(jsonObj) {
-    var context = jsonObj["@context"]
-    var graph = jsonObj["@graph"]
-    var bmc = _.findWhere(graph, '{"@type":"ebucore:BMContent"}');
-    if (bmc === null || bmc === undefined) {
-        console.error("No BMContent found");
-    }
-    delete bmc['@id'];
-    delete bmc["ebucore:hasPart"];
-    bmc["@type"] = "BMContent";
-    bmc["@context"] = context;
-
-
-    var result = JSON.stringify(bmc);
-    result = result;
-    console.log("Using BMContent: " + result);
-    return result;
-}
-
-
 
 function AddEssenceToBMContent(bmcObj, essenceID) {
 
@@ -47,9 +24,9 @@ function generateBMEssenceFromOutput(jsonObj, worflow_param, outputType) {
     var context = jsonObj["@context"]
 
     var path;
-    for (i = 0; i < worflow_param.outputfile.length; i++) {
-        if (worflow_param.outputfile[i].type == outputType) {
-            path = worflow_param.outputfile[i].path;
+    for (i = 0; i < worflow_param.transform_job_output.length; i++) {
+        if (worflow_param.transform_job_output[i].type == outputType) {
+            path = worflow_param.transform_job_output[i].path;
         }
     }
 
@@ -62,24 +39,6 @@ function generateBMEssenceFromOutput(jsonObj, worflow_param, outputType) {
     console.log("Using BM: " + result)
     return result;
 }
-
-
-function getBMEssence(jsonObj) {
-    var context = jsonObj["@context"]
-    var graph = jsonObj["@graph"]
-    var bme = _.findWhere(graph, '{"@type":"ebucore:BMEssence"}');
-    if (bme === null || bme === undefined) {
-        console.error("No BMContent found");
-    }
-    delete bme['@id']
-    delete bme['ebucore:hasPart']
-    bme["@type"] = "BMEssence"
-    bme["@context"] = context
-    var result = JSON.stringify(bme)
-    console.log("Using BMEssence: " + result)
-    return result;
-}
-
 
 if (fs.existsSync(CREDENTIALS_FILE)) {
     console.log("Start Local Execution");
