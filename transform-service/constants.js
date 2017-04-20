@@ -78,9 +78,16 @@ CONTEXTS[DEFAULT_CONTEXT] = {
             "@id": "ebucore:stopJobError",
             "@type": "xsd:string"
         },
-        "outputFile": {
-            "@id": "ebucore:outputFile",
-            "@type": "xsd:anyURI"
+        //outputFile: [ { "type": "proxy", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.MP4" },
+        //{ "type": "thumbnail", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.PNG" }]
+        //  "BMEssence": "ebucore:BMEssence",
+        // "hasRelatedResource": {
+        //     "@id": "ebucore:hasRelatedResource",
+        //     "@type": "@id"
+        // },
+        "outputFile": {            
+            "@type": "xsd:string",
+            "@id": "ebucore:outputFile", 
         }
     }
 };
