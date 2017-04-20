@@ -1,6 +1,7 @@
 //"use strict";
 
 var async = require("async");
+var request = require("request");
 
 var dal = require("./lambda-data-access-layer.js");
 
@@ -58,7 +59,7 @@ function postStartJob(event, startJob, callback) {
         if (err) {
             console.log("postStartJob() failed with error '" + err + "'");
             if (startJob.asyncEndpoint && startJob.asyncEndpoint) {
-                return dal.get(event, startJob.asyncEndpoint.failure, function (err) {
+                return doGet(startJob.asyncEndpoint.failure, function (err) {
                     if (err) {
                         console.log("GET from '" + startJob.asyncEndpoint.failure + "' failed with error '" + err + "'");
                     }
@@ -119,14 +120,14 @@ function put(event, resource, callback) {
 
                             if (startJob.asyncEndpoint && startJob.asyncEndpoint) {
                                 if (resource.jobStatus === "FAILED") {
-                                    return dal.get(event, startJob.asyncEndpoint.failure, function (err) {
+                                    return doGet(startJob.asyncEndpoint.failure, function (err) {
                                         if (err) {
                                             console.log("GET from '" + startJob.asyncEndpoint.failure + "' failed with error '" + err + "'");
                                         }
                                         return callback(null, resource);
                                     });
                                 } else {
-                                    return dal.get(event, startJob.asyncEndpoint.success, function (err) {
+                                    return doGet(startJob.asyncEndpoint.success, function (err) {
                                         if (err) {
                                             console.log("GET from '" + startJob.asyncEndpoint.success + "' failed with error '" + err + "'");
                                         }
@@ -146,6 +147,23 @@ function put(event, resource, callback) {
 
 function del(event, url, callback) {
     dal.del(event, url, callback);
+}
+
+// quick hack since data access layer assumes jsonld interaction
+function doGet(url, callback) {
+    return request({
+        url: url,
+        method: "GET",
+        json: true
+    }, function (err, response, body) {
+        if (err) {
+            return callback(err);
+        } else if (response.statusCode === 200) {
+            return callback(null, body);
+        } else {
+            return callback(response.statusCode);
+        }
+    });
 }
 
 module.exports = {
