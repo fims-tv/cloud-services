@@ -22,14 +22,7 @@ function AddEssenceToBMContent(bmcObj, essenceID) {
 
 function generateBMEssenceFromOutput(jsonObj, worflow_param, outputType) {
     var context = jsonObj["@context"]
-
-    var path;
-    for (i = 0; i < worflow_param.transform_job_output.length; i++) {
-        if (worflow_param.transform_job_output[i].type == outputType) {
-            path = worflow_param.transform_job_output[i].path;
-        }
-    }
-
+    var path = worflow_param[outputType + '_output'];
     var bm = {};
     bm["@context"] = context;
     bm.label = outputType;
@@ -188,8 +181,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         console.error("No worflow_param found");
     }
 
-    var essenceIDProxy = null;
-    var essenceIDThumbnail = null;
+    var essenceID = null;
 
     async.waterfall([
 
@@ -214,7 +206,11 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         },
 
         function (callback) {
-            var bme = generateBMEssenceFromOutput(payload, worflow_param, "proxy");    // Generating Essence for proxy
+            var essenceType = 'proxy'
+            if (worflow_param.thumbnail_output) {
+                essenceType = 'thumbnail'
+            }
+            var bme = generateBMEssenceFromOutput(payload, worflow_param, essenceType);    // Generating Essence for proxy
             console.log('POST to ' + REPO_URL_BMESSENCE);
             console.log('payload: ' + bme);
             request({                              //Create the BMEssence in Media Repo
@@ -228,29 +224,8 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
             console.log("Payload result:", body);
             var createdObject = JSON.parse(body);
             console.log("Created Proxy Essence:", JSON.stringify(createdObject, null, 2));
-            essenceIDProxy = createdObject.id; // not createdObject['@id'] ???
-            console.log("Created Proxy  EssenceId:", essenceIDProxy);
-            callback();
-        },
-
-
-        function (callback) {
-            var bme = generateBMEssenceFromOutput(payload, worflow_param, "thumbnail");    // Generating Essence for Thumbnail
-            console.log('POST to ' + REPO_URL_BMESSENCE);
-            console.log('payload: ' + bme);
-            request({                              //Create the BMEssence in Media Repo
-                url: REPO_URL_BMESSENCE,
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: bme
-            }, callback);
-        },
-        function (response, body, callback) {    // Extract the essence id
-            console.log("Payload result:", body);
-            var createdObject = JSON.parse(body);
-            console.log("Created Proxy Essence:", JSON.stringify(createdObject, null, 2));
-            essenceIDThumbnail = createdObject.id; // not createdObject['@id'] ???
-            console.log("Created Proxy  EssenceId:", essenceIDThumbnail);
+            essenceID = createdObject.id; // not createdObject['@id'] ???
+            console.log("Created Proxy  EssenceId:", essenceID);
             callback();
         },
         function (callback) {                 // Add the newly created essence into the original BMContent
@@ -258,8 +233,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
             //var bmcObj = JSON.parse(bmc);
             var bmcObj = payload;
 
-            bmcObj = AddEssenceToBMContent(bmcObj, essenceIDProxy);
-            bmcObj = AddEssenceToBMContent(bmcObj, essenceIDThumbnail);
+            bmcObj = AddEssenceToBMContent(bmcObj, essenceID);
 
             var bmcId = bmcObj.id;
             //var putUrl = REPO_URL_BMCONTENT + "/" + bmcId;

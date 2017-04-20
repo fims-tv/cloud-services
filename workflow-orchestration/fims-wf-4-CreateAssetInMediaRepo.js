@@ -23,7 +23,7 @@ function getBMContent(jsonObj, essenceID) {
     bmc["@context"]= context
 
     if (essenceID)
-        bmc["ebucore:hasRelatedResource"] = [JSON.parse('{"@id":"' + essenceID+ '"}')]
+        bmc["hasRelatedResource"] = [JSON.parse('{"@id":"' + essenceID+ '"}')]
     
     var result = JSON.stringify(bmc)
     console.log("Using BMContent: " + result)
