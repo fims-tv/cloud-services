@@ -5,8 +5,8 @@ const async = require('async');
 const AWS = require('aws-sdk');
 
 const REPO_URL = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/"
-const BMCONTENT_ENDPT = REPO_URL+"BMContent"
-const BMESSENCE_ENDPT = REPO_URL+"BMEssence"
+const BMCONTENT_ENDPT = REPO_URL + "BMContent"
+const BMESSENCE_ENDPT = REPO_URL + "BMEssence"
 
 const CREDENTIALS_FILE = "./credentials.json"
 var s3 = new AWS.S3();
@@ -14,76 +14,89 @@ var s3 = new AWS.S3();
 function getBMContent(jsonObj, essenceID) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
-    var bmc = graph.find(function (bm) { return bm['@type'] == 'ebucore:BMContent'});
+    var bmc = graph.find(function (bm) { return bm['@type'] == 'ebucore:BMContent' });
     //.findWhere(graph, '{"@type":"ebucore:BMContent"}');
-    if ( bmc === null || bmc === undefined) {
+    if (bmc === null || bmc === undefined) {
         console.error("No BMContent found");
     }
     delete bmc['@id']
     delete bmc["ebucore:hasPart"]
-    bmc['@type']= "BMContent"
-    bmc["@context"]= context
+    bmc['@type'] = "BMContent"
+    bmc["@context"] = context
 
-    if (essenceID)
-        bmc["hasRelatedResource"] = [JSON.parse('{"@id":"' + essenceID+ '"}')]
+
+
+
+    if (essenceID) {
+        // add the essence
+        if (bmc["ebucore:hasRelatedResource"] == undefined) {
+            bmc["ebucore:hasRelatedResource"] = [];
+        }
+
+        bmc["ebucore:hasRelatedResource"].push({ "id": "" + essenceID + "" });
+        console.log("Adding essence to BMContent: " + JSON.stringify(bmc));
+    }
     
-    var result = JSON.stringify(bmc)
-    console.log("Using BMContent: " + result)
+
+    var result = JSON.stringify(bmc);
+    console.log("Using BMContent: " + result);
     return result;
 }
 
-function getByField(field) { 
+function getByField(field) {
     bmc == 'ebucore:BMEssence'
 }
 
 function getBMEssence(jsonObj) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
-    var bme = graph.find(function (g) { return g['@type'] == 'ebucore:BMEssence'});
+    var bme = graph.find(function (g) { return g['@type'] == 'ebucore:BMEssence' });
     //var bme = _.findWhere(graph, '"@type":"ebucore:BMEssence"');
-    if ( bme === null || bme === undefined) {
+    if (bme === null || bme === undefined) {
         console.error("No BMEssence found");
     }
-    delete bme['@id']
-    delete bme['ebucore:hasPart']
-    bme["@type"]= "BMEssence"
-    bme["@context"]= context
-    var result = JSON.stringify(bme)
-    console.log("Using BMEssence: " + result)
-    return bme
+    delete bme['@id'];
+    delete bme['ebucore:hasPart'];
+    bme["@type"] = "BMEssence";
+    bme["@context"] = context;
+    var result = JSON.stringify(bme);
+    console.log("Using BMEssence: " + result);
+    return bme;
 }
 
+
 if (fs.existsSync(CREDENTIALS_FILE)) {
-    var event = ["Job Succeed",{"payload":{"@context":{"ebucore":"http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#","esc":"http://www.eurovision.com#","fims":"http://fims.tv#","rdf":"http://www.w3.org/1999/02/22-rdf-syntax-ns#","rdfs":"http://www.w3.org/2000/01/rdf-schema#","xsd":"http://www.w3.org/2001/XMLSchema#"},"@graph":[{"@id":"http://repository-server/BMContent/2083","@type":"ebucore:BMContent","rdfs:label":"Eurovision Song Contest 2015, Austria","ebucore:dateCreated":"2015-05-23T21:00:00","ebucore:dateModified":"2015-05-23T21:00:00","ebucore:title":"Eurovision Song Contest 2015 Grand Final","esc:orderOk":"1","esc:resultsKnown":"1","esc:votingRules":" Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ","ebucore:date":"2015-05-23T21:00:00","ebucore:hasPart":[{"@id":"http://repository-server/BMContent/2083_00_00_00"}]},{"@id":"http://repository-server/BMContent/2083_00_00_00","@type":"ebucore:BMContent","rdfs:label":"EBU Vignette","ebucore:title":"EBU Vignette","ebucore:description":"Eurovision Song Contest 2015 Grand Final final_00_00_00-EBU_Vignette","ebucore:hasRelatedResource":{"@id":"http://repository-server/BMEssence/2083_00_00_00"},"ebucore:dateCreated":"2015_05_23T21:00:00+00_00_00","ebucore:dateModified":"2015_05_23T21:00:00+00_00_00","ebucore:startTimecode":"00:00:00:00","ebucore:durationTimecode":"00:00:16:00"},{"@id":"http://repository-server/BMEssence/2083_00_00_00","@type":"ebucore:BMEssence","rdfs:label":"EBU Vignette","ebucore:identifier":"acd3f03f-fe8b-4f55-97f7-739be2bc9c4b","ebucore:dateCreated":"2015_05_23T21:00:00+00_00_00","ebucore:dateModified":"2015_05_23T21:00:00+00_00_00","ebucore:fileSize":"19939451","ebucore:duration":" 00:00:16:00 ","ebucore:durationTimecode":" 00:00:16:00 ","ebucore:locator":"2015_GF_ORF_00_00_00_conv.mp4","ebucore:fileName":"2015_GF_ORF_00_00_00_conv.mp4","ebucore:locatorTargetInformation":"AWS","ebucore:storageType":"AWS","ebucore:status":"online","ebucore:conformsTo":{"@id":"http://fims.tv#Essencetemplate1"}}]},"worflow_param":{"src_bucket":"public-fims-nab","src_key":"ingest_source_test2.jsonld","dest_bucket":"private-fims-nab","essence":"2015_GF_ORF_00_00_00_conv.mp4","essence_url":"https://s3.amazonaws.com/private-fims-nab/ingested_1492466346566_2015_GF_ORF_00_00_00_conv.mp4","job_url":"https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/AmeJob/e3722a84-f0e6-46f7-807e-87d992e8ea3f"}}];
+    var event = ["Job Succeed", { "payload": { "@context": { "ebucore": "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#", "esc": "http://www.eurovision.com#", "fims": "http://fims.tv#", "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdfs": "http://www.w3.org/2000/01/rdf-schema#", "xsd": "http://www.w3.org/2001/XMLSchema#" }, "@graph": [{ "@id": "http://repository-server/BMContent/2083", "@type": "ebucore:BMContent", "rdfs:label": "Eurovision Song Contest 2015, Austria", "ebucore:dateCreated": "2015-05-23T21:00:00", "ebucore:dateModified": "2015-05-23T21:00:00", "ebucore:title": "Eurovision Song Contest 2015 Grand Final", "esc:orderOk": "1", "esc:resultsKnown": "1", "esc:votingRules": " Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ", "ebucore:date": "2015-05-23T21:00:00", "ebucore:hasPart": [{ "@id": "http://repository-server/BMContent/2083_00_00_00" }] }, { "@id": "http://repository-server/BMContent/2083_00_00_00", "@type": "ebucore:BMContent", "rdfs:label": "EBU Vignette", "ebucore:title": "EBU Vignette", "ebucore:description": "Eurovision Song Contest 2015 Grand Final final_00_00_00-EBU_Vignette", "ebucore:hasRelatedResource": { "@id": "http://repository-server/BMEssence/2083_00_00_00" }, "ebucore:dateCreated": "2015_05_23T21:00:00+00_00_00", "ebucore:dateModified": "2015_05_23T21:00:00+00_00_00", "ebucore:startTimecode": "00:00:00:00", "ebucore:durationTimecode": "00:00:16:00" }, { "@id": "http://repository-server/BMEssence/2083_00_00_00", "@type": "ebucore:BMEssence", "rdfs:label": "EBU Vignette", "ebucore:identifier": "acd3f03f-fe8b-4f55-97f7-739be2bc9c4b", "ebucore:dateCreated": "2015_05_23T21:00:00+00_00_00", "ebucore:dateModified": "2015_05_23T21:00:00+00_00_00", "ebucore:fileSize": "19939451", "ebucore:duration": " 00:00:16:00 ", "ebucore:durationTimecode": " 00:00:16:00 ", "ebucore:locator": "2015_GF_ORF_00_00_00_conv.mp4", "ebucore:fileName": "2015_GF_ORF_00_00_00_conv.mp4", "ebucore:locatorTargetInformation": "AWS", "ebucore:storageType": "AWS", "ebucore:status": "online", "ebucore:conformsTo": { "@id": "http://fims.tv#Essencetemplate1" } }] }, "worflow_param": { "src_bucket": "public-fims-nab", "src_key": "ingest_source_test2.jsonld", "dest_bucket": "private-fims-nab", "essence": "2015_GF_ORF_00_00_00_conv.mp4", "essence_url": "https://s3.amazonaws.com/private-fims-nab/ingested_1492466346566_2015_GF_ORF_00_00_00_conv.mp4", "job_url": "https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/AmeJob/e3722a84-f0e6-46f7-807e-87d992e8ea3f" } }];
     var payload
     var workflow_param
 
-    for (i = 0; i < event.length; i++) { 
-        if ( event[i] !== "Job Succeed" ) {
-            payload = event[i].payload
-            workflow_param = event[i].worflow_param
+    for (i = 0; i < event.length; i++) {
+        if (event[i] !== "Job Succeed") {
+            payload = event[i].payload;
+            workflow_param = event[i].worflow_param;
         }
     }
 
-    if ( payload === undefined ) {
+    if (payload == undefined) {
         console.error("No payload found");
-    }    
-    if ( workflow_param === undefined ) {
+    }
+    if (workflow_param == undefined) {
         console.error("No workflow_param found");
     }
 
     var essenceID = null;
-    async.waterfall([ 
+    async.waterfall([
         function (callback) {
-            var bme = getBMEssence(payload)
-            console.log('POST to ' + BMESSENCE_ENDPT)
-            console.log('payload: ' + bme)
+            var bme = getBMEssence(payload);
+            console.log('POST to ' + BMESSENCE_ENDPT);
+            console.log('payload: ' + JSON.stringify(bme, null, 2));
             request({
                 url: BMESSENCE_ENDPT,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: bme
-            }, callback)},
+                body: JSON.stringify(bme, null, 2)
+            }, callback)
+        },
         function (response, body, callback) {
             console.log("Payload result:", body);
             var createdObject = JSON.parse(body);
@@ -100,7 +113,8 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: bmc
-            }, callback)},
+            }, callback)
+        },
         function (response, body, callback) {
             console.log("Payload result:", body);
             var createdObject = JSON.parse(body);
@@ -114,7 +128,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
 
         function nextStep(jsonEnvelop) {
             console.log("Job Created Successfully -> Next")
-            callback(null, jsonEnvelop)      
+            callback(null, jsonEnvelop)
         }
 
         console.log("Received event:", JSON.stringify(event, null, 2));
@@ -123,36 +137,37 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         var payload
         var worflow_param
 
-        for (i = 0; i < event.length; i++) { 
-            if ( event[i] !== "Job Succeed" ) {
+        for (i = 0; i < event.length; i++) {
+            if (event[i] !== "Job Succeed") {
                 payload = event[i].payload
                 worflow_param = event[i].worflow_param
             }
         }
-        if ( payload === undefined ) {
+        if (payload === undefined) {
             console.error("No payload found");
-        }    
-        if ( worflow_param === undefined ) {
+        }
+        if (worflow_param === undefined) {
             console.error("No worflow_param found");
         }
 
         var essenceID = null;
         var bme
-        async.waterfall([ 
+        async.waterfall([
             function (callback) {
                 bme = getBMEssence(payload)
                 // add AME info
                 var bucket = worflow_param.ame_output.substring(worflow_param.ame_output.indexOf("/", 8) + 1);
                 var key = bucket.substring(bucket.indexOf("/") + 1);
                 bucket = bucket.substring(0, bucket.indexOf("/"));
-                console.log( "s3.getObject '"+ key+ "' on bucket '"+ bucket + "'" )
-                s3.getObject ( {Bucket: bucket, Key: key}, callback)},
+                console.log("s3.getObject '" + key + "' on bucket '" + bucket + "'")
+                s3.getObject({ Bucket: bucket, Key: key }, callback)
+            },
             function (data, callback) {
                 var ameData = JSON.parse(new Buffer(data.Body).toString("utf8"))
-                console.log( 'ameData: '+ JSON.stringify(ameData) );
+                console.log('ameData: ' + JSON.stringify(ameData));
                 for (var key in ameData) {
                     if (key != '@context' && ameData.hasOwnProperty(key)) {
-                        bme[key]= ameData[key];
+                        bme[key] = ameData[key];
                     }
                 }
                 console.log('POST to ' + BMESSENCE_ENDPT)
@@ -162,7 +177,8 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(bme)
-                }, callback)},
+                }, callback)
+            },
             function (response, body, callback) {
                 console.log("Payload result:", body);
                 var createdObject = JSON.parse(body);
@@ -179,7 +195,8 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: bmc
-                }, callback)},
+                }, callback)
+            },
             function (response, body, callback) {
                 console.log("Payload result:", body);
                 var createdObject = JSON.parse(body);
@@ -187,7 +204,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                 var objectId = createdObject.id; // not createdObject['@id'] ???
                 console.log("CreatedBMContentId:", objectId);
                 worflow_param.assetID = objectId
-                nextStep({payload, worflow_param})
+                nextStep({ payload, worflow_param })
             }]);
     }
 }

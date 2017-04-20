@@ -44,10 +44,11 @@ CONTEXTS[DEFAULT_CONTEXT] = {
         },
         "BMEssence": "ebucore:BMEssence",
         "BMContent": "ebucore:BMContent",
-        "hasRelatedResource": {
-            "@id": "ebucore:hasRelatedResource",
-            "@type": "@id"
-        },
+
+   
+         
+    
+
         "locator": {
             "@id": "ebucore:locator",
             "@type": "xsd:anyURI"
