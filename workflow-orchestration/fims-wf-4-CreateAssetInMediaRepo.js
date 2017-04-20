@@ -12,7 +12,7 @@ const CREDENTIALS_FILE = "./credentials.json"
 function getBMContent(jsonObj, essenceID) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
-    var bmc = _.find(function (bm) { return bm['@type'] == 'ebucore:BMContent'});
+    var bmc = graph.find(function (bm) { return bm['@type'] == 'ebucore:BMContent'});
     //.findWhere(graph, '{"@type":"ebucore:BMContent"}');
     if ( bmc === null || bmc === undefined) {
         console.error("No BMContent found");
@@ -138,10 +138,10 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         async.waterfall([ 
             function (callback) {
                 var bme = getBMEssence(payload)
-                console.log('POST to ' + REPO_URL_BMESSENCE)
+                console.log('POST to ' + BMESSENCE_ENDPT)
                 console.log('payload: ' + bme)
                 request({
-                    url: REPO_URL_BMESSENCE,
+                    url: BMESSENCE_ENDPT,
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: bme
@@ -155,10 +155,10 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                 callback();
             }, function (callback) {
                 var bmc = getBMContent(payload, essenceId)
-                console.log('POST to ' + REPO_URL_BMCONTENT)
+                console.log('POST to ' + BMCONTENT_ENDPT)
                 console.log('payload: ' + bmc)
                 request({
-                    url: REPO_URL_BMCONTENT,
+                    url: BMCONTENT_ENDPT,
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: bmc
