@@ -13,6 +13,8 @@ function retrieveEssenceFromMediaRepo(essenceIdUrl) {
     if (essenceIdUrl == undefined)
         console.error("retrieveEssenceFromMediaRepo ==> EssenceId is null");
 
+  console.log("Get Essence from Repo : " ,essenceIdUrl );
+
     request({                              //Get the BMEssence from Media Repo
         url: essenceIdUrl,
         method: "GET",
@@ -45,11 +47,12 @@ function postEssenceToSemanticRepo(err, response, body) {
  }
 
 
-
-if (fs.existsSync(CREDENTIALS_FILE)) {
+if (1 == 1) {
+//if (fs.existsSync(CREDENTIALS_FILE)) {
     console.log("Start Local Execution");
 
-    var event = ["Job Succeed", { "payload": { "@context": { "ebucore": "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#", "esc": "http://www.eurovision.com#", "fims": "http://fims.tv#", "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdfs": "http://www.w3.org/2000/01/rdf-schema#", "xsd": "http://www.w3.org/2001/XMLSchema#", "type": "@type", "BMEssence": "ebucore:BMEssence", "locator": { "@id": "ebucore:locator", "@type": "xsd:anyURI" }, "label": "rdfs:label" }, "@graph": [{ "@id": "http://repository-server/BMContent/2083", "@type": "ebucore:BMContent", "rdfs:label": "Eurovision Song Contest 2015, Austria", "ebucore:dateCreated": "2015-05-23T21:00:00", "ebucore:dateModified": "2015-05-23T21:00:00", "ebucore:title": "Eurovision Song Contest 2015 Grand Final", "esc:orderOk": "1", "esc:resultsKnown": "1", "esc:votingRules": " Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ", "ebucore:date": "2015-05-23T21:00:00", "ebucore:hasPart": [{ "@id": "http://repository-server/BMContent/2083_00_00_00" }] }, { "@id": "http://repository-server/BMContent/2083_00_00_00", "@type": "ebucore:BMContent", "rdfs:label": "EBU Vignette", "ebucore:title": "EBU Vignette", "ebucore:description": "Eurovision Song Contest 2015 Grand Final final_00_00_00-EBU_Vignette", "ebucore:hasRelatedResource": { "@id": "http://repository-server/BMEssence/2083_00_00_00" }, "ebucore:dateCreated": "2015_05_23T21:00:00+00_00_00", "ebucore:dateModified": "2015_05_23T21:00:00+00_00_00", "ebucore:startTimecode": "00:00:00:00", "ebucore:durationTimecode": "00:00:16:00" }, { "@id": "http://repository-server/BMEssence/2083_00_00_00", "@type": "ebucore:BMEssence", "rdfs:label": "EBU Vignette", "ebucore:identifier": "acd3f03f-fe8b-4f55-97f7-739be2bc9c4b", "ebucore:dateCreated": "2015_05_23T21:00:00+00_00_00", "ebucore:dateModified": "2015_05_23T21:00:00+00_00_00", "ebucore:fileSize": "19939451", "ebucore:duration": " 00:00:16:00 ", "ebucore:durationTimecode": " 00:00:16:00 ", "ebucore:locator": "2015_GF_ORF_00_00_00_conv.mp4", "ebucore:fileName": "2015_GF_ORF_00_00_00_conv.mp4", "ebucore:locatorTargetInformation": "AWS", "ebucore:storageType": "AWS", "ebucore:status": "online", "ebucore:conformsTo": { "@id": "http://fims.tv#Essencetemplate1" } }] }, "worflow_param": { "src_bucket": "public-fims-nab", "src_key": "ingest_source_test2.jsonld", "dest_bucket": "private-fims-nab", "essence": "2015_GF_ORF_00_00_00_conv.mp4", "assetID": "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMContent/c12a89e4-f9e5-4b1b-9704-7df578b4668e", "essence_url": "https://s3.amazonaws.com/private-fims-nab/ingested_1492613108349_2015_GF_ORF_00_00_00_conv.mp4", "job_url": "https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/AmeJob/bdeab17a-9e55-47f8-80f5-da7d831eda0d", "outputfile": [{ "type": "proxy", "path": "https://s3.amazonaws.com/private-fims-nab/proxy_1492460963766_2015_GF_ORF_00_00_00_conv.MP4" }, { "type": "thumbnail", "path": "https://s3.amazonaws.com/private-fims-nab/ingested_1492460963766_2015_GF_ORF_00_00_00_conv.PNG" }] } }];
+    var event = ["Job Succeed",  {"payload":{"ebucore:title":"Eurovision Song Contest 2015 Grand Final","http://www.eurovision.com#votingRules":" Televoters and a professional jury in each country have a 50% stake in the outcome. The votes are revealed by spokespeople from all participating countries. ","ebucore:dateModified":"2015-05-23T21:00:00","ebucore:dateCreated":"2015-05-23T21:00:00","http://www.eurovision.com#orderOk":"1","dateModified":"2017-04-21T13:41:18.650Z","label":"Eurovision Song Contest 2015, Austria","type":"BMContent","@context":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/context/default","ebucore:hasRelatedResource":[{"id":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMEssence/acb46390-a7a8-4c78-b824-7a54b40c789b"},{"id":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMEssence/ab9015cf-4aec-490e-a09e-fbc564293d93"},{"id":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMEssence/a9fbdcac-b33a-41a3-a11d-8b7d6d117372"}],"http://www.eurovision.com#resultsKnown":"1","dateCreated":"2017-04-21T13:39:43.330Z","id":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMContent/8cdb1b05-1f5c-4860-a902-780cfe5d1e93","ebucore:date":"2015-05-23T21:00:00"},"worflow_param":{"src_bucket":"public-fims-nab","src_key":"ingest_source_test2.jsonld","dest_bucket":"private-fims-nab","essence":"2015_GF_ORF_00_00_00_conv.mp4","essence_url":"https://s3.amazonaws.com/private-fims-nab/ingested_1492781964295_2015_GF_ORF_00_00_00_conv.mp4","ame_output":"https://s3.amazonaws.com/private-fims-nab/ingested_1492781964295_2015_GF_ORF_00_00_00_conv.jsonld","job_url":"https://jdd3j38ae4.execute-api.us-east-1.amazonaws.com/test/TransformJob/ab9e7774-7135-46b9-a585-b08ec8ee56eb","next_job":"THUMBNAIL","assetID":"https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/BMContent/8cdb1b05-1f5c-4860-a902-780cfe5d1e93","proxy_output":"https://s3.amazonaws.com/private-fims-nab/ingested_1492781964295_2015_GF_ORF_00_00_00_conv_proxy.mp4","thumbnail_output":"https://s3.amazonaws.com/private-fims-nab/ingested_1492781964295_2015_GF_ORF_00_00_00_conv.png"}}
+];
 
     var payload;
     var worflow_param;
@@ -100,9 +103,11 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         function (response, body, callback) {    // Extract the essence id
 
             var bm = payload;
-            for (i = 0; i < bm.hasRelatedResource.length; i++) {
-                var bmc = bm.hasRelatedResource[i];
-                retrieveEssenceFromMediaRepo(bmc);
+            for (i = 0; i < bm["ebucore:hasRelatedResource"].length; i++) {
+                var bmc = bm["ebucore:hasRelatedResource"][i];
+                var bmcUrl = bmc.id;
+
+                retrieveEssenceFromMediaRepo(bmcUrl);
             }
         }]);
 
@@ -166,9 +171,11 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
         function (response, body, callback) {    // Extract the essence id
 
             var bm = payload;
-            for (i = 0; i < bm.hasRelatedResource.length; i++) {
-                var bmc = bm.hasRelatedResource[i];
-                retrieveEssenceFromMediaRepo(bmc);
+            for (i = 0; i < bm["ebucore:hasRelatedResource"].length; i++) {
+                var bmc = bm["ebucore:hasRelatedResource"][i];
+                var bmcUrl = bmc.id;
+
+                retrieveEssenceFromMediaRepo(bmcUrl);
             }
             nextStep({ payload, worflow_param });
         }]);
