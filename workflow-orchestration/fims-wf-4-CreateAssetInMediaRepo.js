@@ -44,7 +44,7 @@ function getBMContent(jsonObj, essenceID) {
 
         }
 
-        bmc["ebucore:hasRelatedResource"].push({ "id": "" + essenceID + "" });
+        bmc["ebucore:hasRelatedResource"].push({ "@id": "" + essenceID + "" });
         console.log("Adding essence to BMContent: " + JSON.stringify(bmc));
     }
 
