@@ -25,18 +25,29 @@ function getBMContent(jsonObj, essenceID) {
     bmc["@context"] = context
 
 
-
-
     if (essenceID) {
         // add the essence
         if (bmc["ebucore:hasRelatedResource"] == undefined) {
             bmc["ebucore:hasRelatedResource"] = [];
         }
+        else {
+            if (Array.isArray(bmc["ebucore:hasRelatedResource"]) == false) {
+                if (bmc["ebucore:hasRelatedResource"].id == undefined) {
+                    bmc["ebucore:hasRelatedResource"] = [];
+                }
+                else {
+                    var tempValue = bmc["ebucore:hasRelatedResource"].id;
+                    bmc["ebucore:hasRelatedResource"] = [];
+                    bmc["ebucore:hasRelatedResource"].push({ "id": tempValue });
+                }
+            }
+
+        }
 
         bmc["ebucore:hasRelatedResource"].push({ "id": "" + essenceID + "" });
         console.log("Adding essence to BMContent: " + JSON.stringify(bmc));
     }
-    
+
 
     var result = JSON.stringify(bmc);
     console.log("Using BMContent: " + result);
