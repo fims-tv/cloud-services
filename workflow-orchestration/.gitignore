@@ -4,3 +4,5 @@ credentials.json
 build
 //deploy-config.json
 test-config.json
+node_module
+TempLoic
