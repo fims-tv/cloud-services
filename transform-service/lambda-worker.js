@@ -104,7 +104,7 @@ function doProcessJob(event, processJob, callback) {
                     break;
                 case "CreateProxy":
                     outputFilename = inputFilename + ".mp4";
-                    args = ["-y", "-i", inputFilename, "-preset", "ultrafast", "-vf", "scale=-1:360", "-c:v", "libx264", "-pix_fmt", "yuv420p", outputFilename];
+                    args = ["-y", "-i", inputFilename, "-threads", "8", "-preset", "ultrafast", "-vf", "scale=-1:360", "-c:v", "libx264", "-pix_fmt", "yuv420p", outputFilename];
                     break;
                 default:
                     return callback("Unknown jobProfile '" + jobProfile.label + "'");
