@@ -1,3 +1,6 @@
 transform-service/Transfrom-Service.zip
 media-repository/credentials.json
 media-repository/build/fims-media-repo-api-package.zip
+/npm-debug.log
+/service-registry/.vscode
+/service-registry/node_modules

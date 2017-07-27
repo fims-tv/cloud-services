@@ -13,6 +13,7 @@ var deployConfig = configuration.deployConfig();
 var testConfig = configuration.testConfig();
 
 apiHandler.AWS.config.region = testConfig.local.region;
+apiHandler.AWS.config.credentials = new apiHandler.AWS.Credentials("", "");
 apiHandler.AWS.config.endpoint = testConfig.local.dynamodb
 
 http.createServer(function (request, response) {
