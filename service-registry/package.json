@@ -17,7 +17,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "uuid": "^3.1.0",
-    "fims-aws": "^0.0.1"
+    "fims-aws": "0.0.2"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"

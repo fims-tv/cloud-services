@@ -7,44 +7,44 @@ exports.handler = FIMS.API.handler;
 exports.FIMS = FIMS;
 
 var originalBL = {
+    accepts: FIMS.BL.accepts,
     get: FIMS.BL.get,
     post: FIMS.BL.post,
     put: FIMS.BL.put,
     del: FIMS.BL.del
 };
 
-FIMS.BL.get = function (event, resourceDescriptor, callback) {
-    switch (resourceDescriptor.type) {
-        case "Service":
-            return originalBL.get(event, resourceDescriptor, callback);
-        default:
-            return callback("Service does not handle type '" + resourceDescriptor.type + "'");
-    }
-}
+//FIMS.setLogger("error", console.error);
+//FIMS.setLogger("warn", console.warn);
+//FIMS.setLogger("log", console.log);
 
-FIMS.BL.post = function (event, resourceDescriptor, resource, callback) {
-    switch (resourceDescriptor.type) {
-        case "Service":
-            return originalBL.post(event, resourceDescriptor, resource, callback);
-        default:
-            return callback("Service does not handle type '" + resourceDescriptor.type + "'");
+FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
+    if (resourceDescriptor.type === "Service") {
+        return callback();
     }
-}
+    return originalBL.accepts(event, resourceDescriptor, callback);
+};
 
-FIMS.BL.put = function (event, resourceDescriptor, resource, callback) {
-    switch (resourceDescriptor.type) {
-        case "Service":
-            return originalBL.put(event, resourceDescriptor, resource, callback);
-        default:
-            return callback("Service does not handle type '" + resourceDescriptor.type + "'");
-    }
-}
+FIMS.BL.get = (event, resourceDescriptor, callback) => {
+    return originalBL.get(event, resourceDescriptor, callback);
+};
 
-FIMS.BL.del = function (event, resourceDescriptor, callback) {
-    switch (resourceDescriptor.type) {
-        case "Service":
-            return originalBL.del(event, resourceDescriptor, callback);
-        default:
-            return callback("Service does not handle type '" + resourceDescriptor.type + "'");
+FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
+    if (resourceDescriptor.type !== resource.type) {
+        return callback("Failed to process POST of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
+    } else {
+        return originalBL.post(event, resourceDescriptor, resource, callback);
     }
-}
+};
+
+FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
+    if (resourceDescriptor.type !== resource.type) {
+        return callback("Failed to process PUT of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
+    } else {
+        return originalBL.put(event, resourceDescriptor, resource, callback);
+    }
+};
+
+FIMS.BL.del = (event, resourceDescriptor, callback) => {
+    return originalBL.del(event, resourceDescriptor, callback);
+};
