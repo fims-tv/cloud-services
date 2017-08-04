@@ -17,11 +17,12 @@ module.exports = {
             console.error("Deployment Configuration file is missing");
             console.error("Create a file with name '" + DEPLOY_CONFIG_FILE + "' with the following content:");
             console.error("{");
-            console.error("  \"lambdaExecutionRoleName\": \"fims-ame-lambda-execution-role\",");
-            console.error("  \"restApiLambdaFunctionName\": \"fims-ame-rest-api\",");
-            console.error("  \"workerLambdaFunctionName\": \"fims-ame-worker\",");
-            console.error("  \"restApiName\": \"fims-ame-rest-api\",");
-            console.error("  \"restApiStageName\": \"test\"");
+            console.error("    \"tableName\": \"fims-ame-service\",");
+            console.error("    \"lambdaExecutionRoleName\": \"fims-ame-lambda-execution-role\",");
+            console.error("    \"restApiLambdaFunctionName\": \"fims-ame-rest-api\",");
+            console.error("    \"workerLambdaFunctionName\": \"fims-ame-worker\",");
+            console.error("    \"restApiName\": \"fims-ame-rest-api\",");
+            console.error("    \"restApiStageName\": \"test\"");
             console.error("}");
             process.exit(1);
         }

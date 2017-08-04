@@ -32,9 +32,102 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
     process.exit(1);
 }
 
+var dynamodb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 var iam = new AWS.IAM({ apiVersion: "2010-05-08" });
 var lambda = new AWS.Lambda({ apiVersion: "2015-03-31" });
 var apigateway = new AWS.APIGateway({ apiVersion: "2015-07-09" });
+
+
+//////////////////////////////
+//          Dynamo          //
+//////////////////////////////
+
+var dynamoTable;
+
+function deployDynamo(callback) {
+    console.log();
+    console.log("=== deployDynamo ===");
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for table '" + config.tableName + "'");
+            dynamodb.listTables(callback);
+        },
+        function (data, callback) {
+            if (data.TableNames.indexOf(config.tableName) >= 0) {
+                console.log("Found table '" + config.tableName + "'");
+                dynamodb.describeTable({ TableName: config.tableName }, function (err, data) {
+                    dynamoTable = data.Table;
+                    callback(err);
+                });
+
+            } else {
+                console.log("Creating table '" + config.tableName + "'");
+                var params = {
+                    AttributeDefinitions: [
+                        {
+                            AttributeName: "resource_type",
+                            AttributeType: "S"
+                        },
+                        {
+                            AttributeName: "resource_id",
+                            AttributeType: "S"
+                        }
+                    ],
+                    KeySchema: [
+                        {
+                            AttributeName: "resource_type",
+                            KeyType: "HASH"
+                        },
+                        {
+                            AttributeName: "resource_id",
+                            KeyType: "RANGE"
+                        }
+                    ],
+                    ProvisionedThroughput: {
+                        ReadCapacityUnits: 5,
+                        WriteCapacityUnits: 5
+                    },
+                    TableName: config.tableName
+                };
+                dynamodb.createTable(params, function (err, data) {
+                    dynamoTable = data.TableDescription;
+                    callback(err)
+                });
+            }
+        }
+    ], callback);
+}
+
+function undeployDynamo(callback) {
+    console.log();
+    console.log("=== undeployDynamo ===");
+    async.waterfall([
+        function (callback) {
+            console.log("Searching for table '" + config.tableName + "'");
+            dynamodb.listTables(callback);
+        },
+        function (data, callback) {
+            if (data.TableNames.indexOf(config.tableName) >= 0) {
+                console.log("Deleting table '" + config.tableName + "'");
+                var params = {
+                    TableName: config.tableName
+                };
+                dynamodb.deleteTable(params, function (err, data) {
+                    callback(err)
+                });
+            } else {
+                console.log("Table '" + config.tableName + "' not found");
+                callback();
+            }
+        }
+    ], callback);
+}
+
+function configDynamoLocal(callback) {
+    var testConfig = configuration.testConfig();
+    dynamodb.endpoint = new AWS.Endpoint(testConfig.local.dynamodb);
+    callback();
+}
 
 //////////////////////////////
 //           IAM            //
@@ -205,13 +298,9 @@ function createRestApiLambdaPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("lambda-business-layer.js");
-    archive.file("lambda-constants.js");
-    archive.file("lambda-data-access-layer.js");
-    archive.file("lambda-repository.js");
-    archive.file("lambda-rest-api.js");
+    archive.file("ame-service.js");
     archive.directory("node_modules/async/");
-    archive.directory("node_modules/jsonld/");
+    archive.directory("node_modules/fims-aws/");
     archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
     archive.finalize();
@@ -248,7 +337,7 @@ function createRestApiLambdaFunction(callback) {
                         ZipFile: fs.readFileSync(REST_API_LAMBDA_PACKAGE_FILE)
                     },
                     FunctionName: config.restApiLambdaFunctionName,
-                    Handler: "lambda-rest-api.handler",
+                    Handler: "ame-service.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",
@@ -342,16 +431,12 @@ function createWorkerLambdaPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("lambda-business-layer.js");
-    archive.file("lambda-constants.js");
-    archive.file("lambda-data-access-layer.js");
-    archive.file("lambda-repository.js");
     archive.file("lambda-worker.js");
     archive.file("externals/mediainfo/0.7.93.x86_64.RHEL_7/mediainfo", { name: "bin/mediainfo", mode: 0755 });
     archive.directory("externals/libmediainfo/0.7.93.x86_64.RHEL_7/", "lib");
     archive.directory("externals/libzen/0.4.34.x86_64.RHEL_7/", "lib");
     archive.directory("node_modules/async/");
-    archive.directory("node_modules/jsonld/");
+    archive.directory("node_modules/fims-aws/");
     archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
     archive.directory("node_modules/xml2js/");
@@ -786,15 +871,25 @@ var functions = [];
 
 switch (command) {
     case "deploy":
+        functions.push(deployDynamo);
         functions.push(deployLambda);
         functions.push(deployGateway);
         break;
     case "undeploy":
         functions.push(undeployGateway);
         functions.push(undeployLambda);
+        functions.push(undeployDynamo);
         break;
     case "updateLambdaCode":
         functions.push(updateLambdaCode);
+        break;
+    case "deployLocal":
+        functions.push(configDynamoLocal);
+        functions.push(deployDynamo);
+        break;
+    case "undeployLocal":
+        functions.push(configDynamoLocal);
+        functions.push(undeployDynamo);
         break;
 }
 
