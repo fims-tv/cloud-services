@@ -12,13 +12,14 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "fims-aws": "0.0.3"
+  },
+  "devDependencies": {
+    "async": "^2.5.0",
+    "uuid": "^3.1.0",
     "archiver": "^1.3.0",
-    "async": "^2.2.0",
-    "aws-sdk": "^2.33.0",
-    "dynamodb-doc": "^1.0.0",
-    "jsonld": "^0.4.11",
     "request": "^2.81.0",
-    "uuid": "^3.0.1"
+    "aws-sdk": "^2.95.0"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"

@@ -304,11 +304,9 @@ function createFimsRestApiPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("constants.js");
-    archive.file("fims-rest-api.js");
-    archive.file("fims-repository.js");
-    archive.directory("node_modules/async/");
-    archive.directory("node_modules/jsonld/");
+    archive.file("job-repository.js");
+    archive.directory("node_modules/async");
+    archive.directory("node_modules/fims-aws");
     archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
     archive.finalize();
@@ -345,7 +343,7 @@ function createFimsRestApiLambdaFunction(callback) {
                         ZipFile: fs.readFileSync(FIMS_REST_API_PACKAGE_FILE)
                     },
                     FunctionName: config.lambdaApiFunctionName,
-                    Handler: "fims-rest-api.handler",
+                    Handler: "job-repository.handler",
                     Role: lambdaExecutionRole.Arn,
                     Runtime: "nodejs4.3",
                     Description: "",

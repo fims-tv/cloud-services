@@ -2,7 +2,7 @@ var http = require("http");
 var uuid = require("uuid");
 var url = require("url");
 
-var apiHandler = require("./fims-rest-api.js");
+var apiHandler = require("./job-repository.js");
 var configuration = require("./configuration.js");
 
 var port = process.argv[2] || 8888;
@@ -12,9 +12,9 @@ console.log("Starting");
 var deployConfig = configuration.deployConfig();
 var testConfig = configuration.testConfig();
 
-apiHandler.AWS.config.region = testConfig.local.region;
-apiHandler.AWS.config.credentials = new apiHandler.AWS.Credentials("", "");
-apiHandler.AWS.config.endpoint = testConfig.local.dynamodb
+apiHandler.FIMS.AWS.config.region = testConfig.local.region;
+apiHandler.FIMS.AWS.config.credentials = new apiHandler.FIMS.AWS.Credentials("", "");
+apiHandler.FIMS.AWS.config.endpoint = testConfig.local.dynamodb
 
 http.createServer(function (request, response) {
     var body = null;
