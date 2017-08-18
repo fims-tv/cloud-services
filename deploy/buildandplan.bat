@@ -1,0 +1,24 @@
+echo #########################
+echo Master Build Script 
+echo #########################
+
+echo #########################
+echo Build service registry project 
+cd ..\service-registry
+node build.js
+cd ..\deploy
+echo #########################
+
+echo #########################
+echo Build ame service  project
+cd ..\ame-service
+node build.js
+cd ..\deploy
+echo #########################
+
+
+echo #########################
+echo Execute Terraform Plan
+echo #########################
+
+terraform plan
