@@ -16,6 +16,12 @@ node build.js
 cd ..\deploy
 echo #########################
 
+echo #########################
+echo Build transform service  project
+cd ..\transform-service
+node installer.js package
+cd ..\deploy
+echo #########################
 
 echo #########################
 echo Execute Terraform Plan
