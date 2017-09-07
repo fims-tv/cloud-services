@@ -14,18 +14,13 @@ var originalBL = {
     del: FIMS.BL.del
 };
 
-//FIMS.setLogger("error", console.error);
-//FIMS.setLogger("warn", console.warn);
-//FIMS.setLogger("log", console.log);
+FIMS.setLogger("error", console.error);
+FIMS.setLogger("warn", console.warn);
+FIMS.setLogger("log", console.log);
 
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
     switch (resourceDescriptor.type) {
-        case "AmeJob":
-        case "TransformJob":
-        case "JobProfile":
-        case "StartJob":
-        case "StopJob":
-        case "Report":
+        case "Job":
             return callback();
         default:
             return originalBL.accepts(event, resourceDescriptor, callback);
@@ -37,18 +32,22 @@ FIMS.BL.get = (event, resourceDescriptor, callback) => {
 };
 
 FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
-    if (resourceDescriptor.type !== resource.type) {
-        return callback("Failed to process POST of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
-    } else {
-        return originalBL.post(event, resourceDescriptor, resource, callback);
+    switch (resource.type) {
+        case "AmeJob":
+        case "TransformJob":
+            return originalBL.post(event, resourceDescriptor, resource, callback);
+        default:
+            return callback("Failed to process POST of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
     }
 };
 
 FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
-    if (resourceDescriptor.type !== resource.type) {
-        return callback("Failed to process PUT of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
-    } else {
-        return originalBL.put(event, resourceDescriptor, resource, callback);
+    switch (resource.type) {
+        case "AmeJob":
+        case "TransformJob":
+            return originalBL.put(event, resourceDescriptor, resource, callback);
+        default:
+            return callback("Failed to process PUT of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
     }
 };
 

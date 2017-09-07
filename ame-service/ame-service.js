@@ -4,7 +4,6 @@ console.log('Loading function');
 var FIMS = require("fims-aws");
 
 var lambda = new FIMS.AWS.Lambda({ apiVersion: "2015-03-31" });
-var async = require("async");
 
 exports.handler = FIMS.API.handler;
 exports.FIMS = FIMS;
@@ -23,7 +22,7 @@ FIMS.setLogger("log", console.log);
 
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
     switch (resourceDescriptor.type) {
-        case "ProcessJob":
+        case "JobAssignment":
             return callback();
     }
 
@@ -44,12 +43,12 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
             }
 
             switch (resource.type) {
-                case "ProcessJob":
+                case "JobAssignment":
                     var params = {
-                        FunctionName: "fims-ame-worker",
+                        FunctionName: event.stageVariables.WorkerLambdaFunctionName,
                         InvocationType: "Event",
                         LogType: "None",
-                        Payload: JSON.stringify({ "event": event, "processJob": resource })
+                        Payload: JSON.stringify({ "event": event, "jobAssignment": resource })
                     };
                     return lambda.invoke(params, function (err, data) {
                         if (err) {

@@ -2,7 +2,7 @@ var http = require("http");
 var uuid = require("uuid");
 var url = require("url");
 
-var api = require("./lambda-rest-api.js");
+var api = require("./ame-service.js");
 var configuration = require("./configuration.js");
 
 var port = process.argv[2] || 8887;

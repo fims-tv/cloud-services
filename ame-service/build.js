@@ -49,6 +49,7 @@ function createRestApiLambdaPackage(callback) {
     archive.directory("node_modules/fims-aws/");
     archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
+    archive.directory("node_modules/xml2js/");
     archive.finalize();
 }
 

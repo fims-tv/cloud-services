@@ -4,3 +4,8 @@ media-repository/build/fims-media-repo-api-package.zip
 /npm-debug.log
 /service-registry/.vscode
 /service-registry/node_modules
+/deploy/.terraform
+/job-repository/build-test1
+/.vscode
+/service-registry/build-test1
+/job-processor-service/build-test1

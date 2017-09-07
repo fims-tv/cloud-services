@@ -15,16 +15,18 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "async": "^2.5.0",
-    "uuid": "^3.1.0",
-    "fims-aws": "0.0.3"
+    "fims-aws": "^0.0.4"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"
   },
   "homepage": "https://github.com/fims-tv/aws-services#readme",
   "devDependencies": {
-    "jasmine": "^2.6.0",
-    "request": "^2.81.0"
+    "archiver": "^2.0.3",
+    "aws-sdk": "^2.110.0",
+    "async": "^2.5.0",
+    "jasmine": "^2.8.0",
+    "request": "^2.81.0",
+    "uuid": "^3.1.0"
   }
 }

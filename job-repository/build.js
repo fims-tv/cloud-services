@@ -8,7 +8,6 @@ var archiver = require("archiver");
 var async = require("async");
 var fs = require("fs");
 
-
 //////////////////////////////
 //         Constants        //
 //////////////////////////////
@@ -42,7 +41,7 @@ function createRestApiLambdaPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("service-registry.js");
+    archive.file("job-repository.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/fims-aws/");
     archive.directory("node_modules/request/"); 
@@ -50,18 +49,13 @@ function createRestApiLambdaPackage(callback) {
     archive.finalize();
 }
 
-
 function buildLambda(callback) {
     console.log();
     console.log("=== BuildLambda ===");
     async.waterfall([
-        
         createRestApiLambdaPackage
-     
     ], callback);
 }
-
-
 
 //////////////////////////////
 //         Build        //

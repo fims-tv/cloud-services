@@ -17,59 +17,106 @@ var s3;
 
 exports.handler = (input, context, callback) => {
     var event = input.event;
-    var processJob = input.processJob;
+    var jobAssignment = input.jobAssignment;
 
     console.log("Received event:", JSON.stringify(event, null, 2));
-    console.log("Received processJob:", JSON.stringify(processJob, null, 2));
+    console.log("Received jobAssignment:", JSON.stringify(jobAssignment, null, 2));
 
-    doProcessJob(event, processJob, callback);
+    doProcessJob(event, jobAssignment, callback);
 };
 
 exports.generateOutput = generateOutput;
 
-function doProcessJob(event, processJob, callback) {
+function doProcessJob(event, jobAssignment, callback) {
     if (!s3) {
         s3 = new FIMS.AWS.S3();
     }
 
-    var startJob;
+    var jobProcess;
     var job;
-    var jobProfile;
+    var jobProfile
+    var jobInput;;
     var bmEssence;
-    var filename;
+    var inputFilename;
     var mediainfoOutput;
     var report;
+    var outputFilename;
 
     async.waterfall([
         function (callback) {
-            console.log("Resolving job");
-            FIMS.DAL.get(event, processJob.job, callback);
+            console.log("updating jobAssignment status to RUNNING");
+            jobAssignment.jobProcessStatus = "RUNNING";
+            jobAssignment.dateModified = new Date().toISOString();
+            FIMS.DAL.put(event, jobAssignment.id, jobAssignment, callback);
+        },
+        function (updatedJobAssignment, callback) {
+            console.log("Resolving jobAssignment.jobProcess");
+            FIMS.DAL.get(event, jobAssignment.jobProcess, callback);
         },
         function (resource, callback) {
-            console.log(JSON.stringify(resource, null, 2));
-            job = resource;
-            if (!job) {
-                return callback("Related Job not found");
+            if (!resource) {
+                return callback("Failed to resolve jobAssignment.jobProcess");
+            } else if (resource.type !== "JobProcess") {
+                return callback("jobAssignment.jobProcess has unexpected type '" + resource.type + "'");
             }
 
-            job.jobStatus = "RUNNING";
-            console.log("Updating job '" + job.id + "' to state '" + job.jobStatus + "'");
-            FIMS.DAL.put(event, job.id, job, callback);
+            console.log(JSON.stringify(resource, null, 2));
+            jobProcess = resource;
+
+            console.log("Resolving jobProcess.job");
+            FIMS.DAL.get(event, jobProcess.job, callback);
         },
         function (resource, callback) {
-            console.log("After updating job");
+            if (!resource) {
+                return callback("Failed to resolve jobProcess.job");
+            } else if (resource.type !== "AmeJob") {
+                return callback("jobProcess.job has unexpected type '" + resource.type + "'");
+            }
+
             console.log(JSON.stringify(resource, null, 2));
             job = resource;
-            console.log("Resolving jobProfile");
+
+            console.log("Resolving job.jobProfile");
             FIMS.DAL.get(event, job.jobProfile, callback);
         },
         function (resource, callback) {
+            if (!resource) {
+                return callback("Failed to resolve job.jobProfile");
+            } else if (resource.type !== "JobProfile") {
+                return callback("job.jobProfile has unexpected type '" + resource.type + "'");
+            }
+
             console.log(JSON.stringify(resource, null, 2));
             jobProfile = resource;
-            console.log("Resolving bmEssence");
-            FIMS.DAL.get(event, job.hasRelatedResource, callback);
+
+            if (jobProfile.name !== "ExtractTechnicalMetadata") {
+                return callback("JobProfile '" + jobProfile.name + "' not accepted");
+            }
+
+            console.log("Resolving job.jobInput");
+            FIMS.DAL.get(event, job.jobInput, callback);
         },
         function (resource, callback) {
+            if (!resource) {
+                return callback("Failed to resolve job.jobInput");
+            } else if (resource.type !== "JobParameterBag") {
+                return callback("job.jobInput has unexpected type '" + resource.type + "'");
+            }
+
+            console.log(JSON.stringify(resource, null, 2));
+            jobInput = resource;
+
+            console.log("Resolving jobInput[\"ebucore:hasRelatedResource\"]");
+            FIMS.DAL.get(event, jobInput["ebucore:hasRelatedResource"], callback);
+        },
+        function (resource, callback) {
+            if (!resource) {
+                return callback("Failed to resolve jobInput[\"ebucore:hasRelatedResource\"]");
+            } else if (resource.type !== "BMEssence") {
+                return callback("jobInput[\"ebucore:hasRelatedResource\"] has unexpected type '" + resource.type + "'");
+            }
+
+
             console.log(JSON.stringify(resource, null, 2));
             bmEssence = resource;
 
@@ -77,25 +124,26 @@ function doProcessJob(event, processJob, callback) {
             var key = bucket.substring(bucket.indexOf("/") + 1);
             bucket = bucket.substring(0, bucket.indexOf("/"));
 
-            filename = "/tmp/" + key;
+            inputFilename = "/tmp/" + key;
 
             console.log("Retrieving file from bucket '" + bucket + "' with key '" + key + "'");
             var params = {
                 Bucket: bucket,
                 Key: key
             };
+
             return s3.getObject(params, callback)
         },
         function (data, callback) {
-            console.log("Writing file to '" + filename + "'");
-            return fs.writeFile(filename, data.Body, callback);
+            console.log("Writing file to '" + inputFilename + "'");
+            return fs.writeFile(inputFilename, data.Body, callback);
         },
         function (callback) {
             // Set the path to the mediainfo binary
             var exe = path.join(__dirname, 'bin/mediainfo');
 
             // Defining the arguments
-            var args = ["--Output=EBUCore", filename];
+            var args = ["--Output=EBUCore", inputFilename];
 
             // Launch the child process
             childProcess.execFile(exe, args, function (error, stdout, stderr) {
@@ -113,8 +161,8 @@ function doProcessJob(event, processJob, callback) {
             });
         },
         function (callback) {
-            console.log("Deleting file '" + filename + "'");
-            return fs.unlink(filename, callback);
+            console.log("Deleting file '" + inputFilename + "'");
+            return fs.unlink(inputFilename, callback);
         },
         function (callback) {
             console.log("Processing xml");
@@ -124,13 +172,15 @@ function doProcessJob(event, processJob, callback) {
             console.log("Extracting metadata from: ");
             console.log(JSON.stringify(result, null, 2));
 
-            if (!job.outputFile) {
-                return callback("OutputFile missing");
+            if (!job.outputLocation) {
+                return callback("OutputLocation missing");
             }
+
+            outputFilename = job.outputLocation + "/" + uuid.v4() + ".jsonld";
 
             var output = generateOutput(result)
 
-            var bucket = job.outputFile.substring(job.outputFile.indexOf("/", 8) + 1);
+            var bucket = outputFilename.substring(outputFilename.indexOf("/", 8) + 1);
             var key = bucket.substring(bucket.indexOf("/") + 1);
             bucket = bucket.substring(0, bucket.indexOf("/"));
 
@@ -150,22 +200,37 @@ function doProcessJob(event, processJob, callback) {
         if (processError) {
             console.error(processError);
         }
-        if (job) {
-            if (processError) {
-                job.jobStatus = "FAILED";
-            } else {
-                job.jobStatus = "COMPLETED";
+
+        if (processError) {
+            jobAssignment.jobProcessStatus = "FAILED";
+            jobAssignment.jobProcessStatusReason = processError;
+        } else {
+            jobAssignment.jobProcessStatus = "COMPLETED";
+            jobAssignment.jobOutput = new FIMS.CORE.JobParameterBag({ locator: outputFilename });
+        }
+        
+        jobAssignment.dateModified = new Date().toISOString();
+
+        console.log("updating jobAssignment");
+        return FIMS.DAL.put(event, jobAssignment.id, jobAssignment, (err) => {
+            if (err) {
+                console.log("Failed to update jobAssignment due to: " + err);
+                jobAssignment.jobProcessStatus = "FAILED";
             }
 
-            console.log("Updating job '" + job.id + "' to state '" + job.jobStatus + "'");
-            return FIMS.DAL.put(event, job.id, job, function (putError) {
-                if (putError) {
-                    console.error(putError);
-                }
-                return callback();
-            });
-        }
-        return callback();
+            if (jobProcess) {
+                jobProcess.jobProcessStatus = jobAssignment.jobProcessStatus;
+
+                console.log("Updating jobProcess");
+                return FIMS.DAL.put(event, jobProcess.id, jobProcess, (err) => {
+                    if (err) {
+                        console.log("Failed to update jobProcess");
+                    }
+                    return callback();
+                });
+            }
+            return callback();
+        });
     });
 }
 

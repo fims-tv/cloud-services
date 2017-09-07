@@ -31,6 +31,26 @@ module "service-registry" {
   region     = "${var.region}"
 }
 
+module "job-repository" {
+  source = "./job-repository"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+}
+
+module "job-processor-service" {
+  source = "./job-processor-service"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  serviceRegistryUrl = "${module.service-registry.rest_service_url}"
+}
+
 module "ame-service" {
   source = "./ame-service"
 

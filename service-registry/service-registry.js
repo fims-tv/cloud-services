@@ -14,13 +14,15 @@ var originalBL = {
     del: FIMS.BL.del
 };
 
-//FIMS.setLogger("error", console.error);
-//FIMS.setLogger("warn", console.warn);
-//FIMS.setLogger("log", console.log);
+FIMS.setLogger("error", console.error);
+FIMS.setLogger("warn", console.warn);
+FIMS.setLogger("log", console.log);
 
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
-    if (resourceDescriptor.type === "Service") {
-        return callback();
+    switch (resourceDescriptor.type) {
+        case "Service":
+        case "JobProfile":
+            return callback();
     }
     return originalBL.accepts(event, resourceDescriptor, callback);
 };

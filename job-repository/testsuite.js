@@ -404,7 +404,6 @@ function extractMetadata (obj, path, defaultValue) {
 //////////////////////////////
 console.log("Starting");
 
-var deployConfig = configuration.deployConfig();
 var testConfig = configuration.testConfig();
 
 var command = "";

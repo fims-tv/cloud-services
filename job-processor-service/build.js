@@ -42,11 +42,11 @@ function createRestApiLambdaPackage(callback) {
 
     archive.pipe(output);
 
-    archive.file("service-registry.js");
+    archive.file("job-processor-service.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/fims-aws/");
     archive.directory("node_modules/request/"); 
-    archive.directory("node_modules/uuid/");
+    archive.directory("node_modules/uuid/"); 
     archive.finalize();
 }
 
