@@ -59,3 +59,19 @@ module "ame-service" {
   account_id = "${var.account_id}"
   region     = "${var.region}"
 }
+
+output "serviceRegistryUrl" {
+  value = "${module.service-registry.rest_service_url}"
+}
+
+output "jobRepositoryUrl" {
+  value = "${module.job-repository.rest_service_url}"
+}
+
+output "jobProcessorServiceUrl" {
+  value = "${module.job-processor-service.rest_service_url}"
+}
+
+output "ameServiceUrl" {
+  value = "${module.ame-service.rest_service_url}"
+}
