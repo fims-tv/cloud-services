@@ -13,7 +13,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "async": "^2.5.0",
-    "fims-aws": "^0.0.4"
+    "fims-aws": "^0.0.5"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"

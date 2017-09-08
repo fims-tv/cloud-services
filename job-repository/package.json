@@ -12,7 +12,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "fims-aws": "^0.0.4"
+    "fims-aws": "^0.0.5"
   },
   "devDependencies": {
     "archiver": "^2.0.3",
