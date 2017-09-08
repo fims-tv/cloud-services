@@ -114,7 +114,7 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
 
                             hasResources.forEach(hasResource => {
                                 if (hasResource.resourceType === "fims:JobAssignment") {
-                                    resourceUrl = hasResource.locator;
+                                    resourceUrl = hasResource.url;
                                 }
                             });
 
@@ -135,7 +135,7 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                     return FIMS.DAL.post(event, resourceUrl, jobAssignment, (err, updatedJobAssignment) => {
                         if (err) {
                             jobProcess.jobProcessStatus = "FAILED";
-                            jobProcess.jobProcessStatusReason = "Service '" + acceptingService.name + "' failed to accept JobAssignment";
+                            jobProcess.jobProcessStatusReason = "Service '" + acceptingService.label + "' failed to accept JobAssignment";
                             job.jobStatus = "FAILED";
                             job.jobStatusReason = "Error in while processing job";
                             return callback(jobProcess.jobProcessStatusReason);

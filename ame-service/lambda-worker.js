@@ -89,8 +89,8 @@ function doProcessJob(event, jobAssignment, callback) {
             console.log(JSON.stringify(resource, null, 2));
             jobProfile = resource;
 
-            if (jobProfile.name !== "ExtractTechnicalMetadata") {
-                return callback("JobProfile '" + jobProfile.name + "' not accepted");
+            if (jobProfile.label !== "ExtractTechnicalMetadata") {
+                return callback("JobProfile '" + jobProfile.label + "' not accepted");
             }
 
             console.log("Resolving job.jobInput");
@@ -114,13 +114,17 @@ function doProcessJob(event, jobAssignment, callback) {
                 return callback("Failed to resolve jobInput[\"ebucore:hasRelatedResource\"]");
             } else if (resource.type !== "BMEssence") {
                 return callback("jobInput[\"ebucore:hasRelatedResource\"] has unexpected type '" + resource.type + "'");
+            } else if (!resource["ebucore:locator"]) {
+                return callback("jobInput[\"ebucore:hasRelatedResource\"] does not have property 'ebucore:locator'");
             }
 
 
             console.log(JSON.stringify(resource, null, 2));
             bmEssence = resource;
 
-            var bucket = bmEssence.locator.substring(bmEssence.locator.indexOf("/", 8) + 1);
+            var locator = bmEssence["ebucore:locator"];
+
+            var bucket = locator.substring(locator.indexOf("/", 8) + 1);
             var key = bucket.substring(bucket.indexOf("/") + 1);
             bucket = bucket.substring(0, bucket.indexOf("/"));
 
@@ -206,9 +210,9 @@ function doProcessJob(event, jobAssignment, callback) {
             jobAssignment.jobProcessStatusReason = processError;
         } else {
             jobAssignment.jobProcessStatus = "COMPLETED";
-            jobAssignment.jobOutput = new FIMS.CORE.JobParameterBag({ locator: outputFilename });
+            jobAssignment.jobOutput = new FIMS.CORE.JobParameterBag({ "ebucore:locator": outputFilename });
         }
-        
+
         jobAssignment.dateModified = new Date().toISOString();
 
         console.log("updating jobAssignment");

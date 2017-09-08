@@ -15,7 +15,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "fims-aws": "^0.0.5"
+    "fims-aws": "^0.0.7"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"

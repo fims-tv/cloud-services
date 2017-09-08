@@ -83,7 +83,7 @@ function createServices(serviceUrls) {
     var services = {};
 
     serviceList.forEach(service => {
-        services[service.name] = service;
+        services[service.label] = service;
     });
 
     return services;
@@ -119,15 +119,15 @@ process.stdin.on('end', function () {
         (callback) => fims.httpGet(jobProfilesUrl, callback),
         (retrievedJobProfiles, callback) => {
             async.each(retrievedJobProfiles, (retrievedJobProfile, callback) => {
-                var jobProfile = jobProfiles[retrievedJobProfile.name];
+                var jobProfile = jobProfiles[retrievedJobProfile.label];
 
                 if (jobProfile && !jobProfile.id) {
                     jobProfile.id = retrievedJobProfile.id;
 
-                    console.log("Updating JobProfile '" + jobProfile.name + "'");
+                    console.log("Updating JobProfile '" + jobProfile.label + "'");
                     fims.httpPut(jobProfile.id, jobProfile, callback);
                 } else {
-                    console.log("Removing " + (jobProfile.id ? "duplicate " : "" ) + "JobProfile '" + retrievedJobProfile.name + "'");
+                    console.log("Removing " + (jobProfile.id ? "duplicate " : "" ) + "JobProfile '" + retrievedJobProfile.label + "'");
                     fims.httpDelete(retrievedJobProfile.id, callback);
                 }
             }, callback);
@@ -138,7 +138,7 @@ process.stdin.on('end', function () {
                     return callback();
                 }
 
-                console.log("Inserting JobProfile '" + jobProfile.name + "'");
+                console.log("Inserting JobProfile '" + jobProfile.label + "'");
                 return fims.httpPost(jobProfilesUrl, jobProfile, (err, postedJobProfile) => {
                     jobProfile.id = postedJobProfile.id;
                     callback();
@@ -151,15 +151,15 @@ process.stdin.on('end', function () {
         },
         (retrievedServices, callback) => {
             return async.each(retrievedServices, (retrievedService, callback) => {
-                var service = services[retrievedService.name];
+                var service = services[retrievedService.label];
 
                 if (service && !service.id) {
                     service.id = retrievedService.id;
 
-                    console.log("Updating Service '" + service.name + "'");
+                    console.log("Updating Service '" + service.label + "'");
                     fims.httpPut(service.id, service, callback);
                 } else {
-                    console.log("Removing " + (service.id ? "duplicate " : "" ) + "Service '" + retrievedService.name + "'");
+                    console.log("Removing " + (service.id ? "duplicate " : "" ) + "Service '" + retrievedService.label + "'");
                     fims.httpDelete(retrievedService.id, callback);
                 }
             }, callback);
@@ -170,7 +170,7 @@ process.stdin.on('end', function () {
                     return callback();
                 }
 
-                console.log("Inserting Service '" + service.name + "'");
+                console.log("Inserting Service '" + service.label + "'");
                 return fims.httpPost(servicesUrl, service, (err, postedService) => {
                     service.id = postedService.id;
                     callback();
