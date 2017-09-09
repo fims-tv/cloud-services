@@ -60,6 +60,28 @@ module "ame-service" {
   region     = "${var.region}"
 }
 
+
+module "media-repository" {
+  source = "./media-repository"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+}
+
+module "workflow" {
+  source = "./workflow"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+}
+
+
+
+
 output "serviceRegistryUrl" {
   value = "${module.service-registry.rest_service_url}"
 }
