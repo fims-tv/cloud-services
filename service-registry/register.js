@@ -1,14 +1,27 @@
 var async = require("async");
 var fims = require("fims-aws").CORE;
 
+
+var jobProfiles = {
+    ExtractTechnicalMetadata : new fims.JobProfile(
+        "ExtractTechnicalMetadata",
+        [
+            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+        ],
+        [
+            new fims.JobParameter("ebucore:locator")
+        ]
+    ),
+}
+
 function createServices(serviceUrls) {
 
-    var services = [];
+    var serviceList = [];
 
     for (var prop in serviceUrls) {
         switch (prop) {
             case "ameServiceUrl":
-                services.push(
+                serviceList.push(
                     new fims.Service(
                         "MediaInfo AME Service",
                         [
@@ -16,15 +29,7 @@ function createServices(serviceUrls) {
                         ],
                         "fims:AmeJob",
                         [
-                            new fims.JobProfile(
-                                "ExtractTechnicalMetadata",
-                                [
-                                    new fims.JobParameter("ebucore:hasRelatedResource", "fims:BMEssence")
-                                ],
-                                [
-                                    new fims.JobParameter("ebucore:locator")
-                                ]
-                            )
+                            jobProfiles.ExtractTechnicalMetadata.id ? jobProfiles.ExtractTechnicalMetadata.id : jobProfiles.ExtractTechnicalMetadata
                         ],
                         [
                             "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt",
@@ -38,7 +43,7 @@ function createServices(serviceUrls) {
                 );
                 break;
             case "jobProcessorServiceUrl":
-                services.push(new fims.Service(
+                serviceList.push(new fims.Service(
                     "Job Processor Service",
                     [
                         new fims.ServiceResource("fims:JobProcess", serviceUrls[prop] + "/JobProcess")
@@ -46,7 +51,7 @@ function createServices(serviceUrls) {
                 ));
                 break;
             case "jobRepositoryUrl":
-                services.push(new fims.Service(
+                serviceList.push(new fims.Service(
                     "Job Repository",
                     [
                         new fims.ServiceResource("fims:AmeJob", serviceUrls[prop] + "/Job"),
@@ -54,8 +59,17 @@ function createServices(serviceUrls) {
                     ]
                 ));
                 break;
+            case "mediaRepositoryUrl":
+                serviceList.push(new fims.Service(
+                    "Media Repository",
+                    [
+                        new fims.ServiceResource("ebucore:BMContent", serviceUrls[prop] + "/BMContent"),
+                        new fims.ServiceResource("ebucore:BMEssence", serviceUrls[prop] + "/BMEssence")
+                    ]
+                ));
+                break;
             case "serviceRegistryUrl":
-                services.push(new fims.Service(
+                serviceList.push(new fims.Service(
                     "Service Registry",
                     [
                         new fims.ServiceResource("fims:Service", serviceUrls[prop] + "/Service"),
@@ -65,6 +79,12 @@ function createServices(serviceUrls) {
                 break;
         }
     }
+
+    var services = {};
+
+    serviceList.forEach(service => {
+        services[service.label] = service;
+    });
 
     return services;
 }
@@ -89,21 +109,72 @@ process.stdin.on('end', function () {
     });
 
     var servicesUrl = serviceUrls.serviceRegistryUrl + "/Service";
+    var jobProfilesUrl = serviceUrls.serviceRegistryUrl + "/JobProfile";
+
+    var services; 
 
     fims.setServiceRegistryServicesURL(servicesUrl);
 
     return async.waterfall([
-        (callback) => fims.getServices(callback),
-        (services, callback) => {
-            return async.each(services, (service, callback) => {
-                console.log("Deleting service " + service.name);
-                return fims.httpDelete(service.id, (err, service) => callback(err));
+        (callback) => fims.httpGet(jobProfilesUrl, callback),
+        (retrievedJobProfiles, callback) => {
+            async.each(retrievedJobProfiles, (retrievedJobProfile, callback) => {
+                var jobProfile = jobProfiles[retrievedJobProfile.label];
+
+                if (jobProfile && !jobProfile.id) {
+                    jobProfile.id = retrievedJobProfile.id;
+
+                    console.log("Updating JobProfile '" + jobProfile.label + "'");
+                    fims.httpPut(jobProfile.id, jobProfile, callback);
+                } else {
+                    console.log("Removing " + (jobProfile.id ? "duplicate " : "" ) + "JobProfile '" + retrievedJobProfile.label + "'");
+                    fims.httpDelete(retrievedJobProfile.id, callback);
+                }
             }, callback);
         },
         (callback) => {
-            return async.each(createServices(serviceUrls), (service, callback) => {
-                console.log("Inserting service " + service.name);
-                return fims.httpPost(servicesUrl, service, (err, service) => callback(err));
+            async.each(jobProfiles, (jobProfile, callback) => {
+                if (jobProfile.id) {
+                    return callback();
+                }
+
+                console.log("Inserting JobProfile '" + jobProfile.label + "'");
+                return fims.httpPost(jobProfilesUrl, jobProfile, (err, postedJobProfile) => {
+                    jobProfile.id = postedJobProfile.id;
+                    callback();
+                });
+            }, callback);
+        },
+        (callback) => {
+            services = createServices(serviceUrls)
+            fims.getServices(callback)
+        },
+        (retrievedServices, callback) => {
+            return async.each(retrievedServices, (retrievedService, callback) => {
+                var service = services[retrievedService.label];
+
+                if (service && !service.id) {
+                    service.id = retrievedService.id;
+
+                    console.log("Updating Service '" + service.label + "'");
+                    fims.httpPut(service.id, service, callback);
+                } else {
+                    console.log("Removing " + (service.id ? "duplicate " : "" ) + "Service '" + retrievedService.label + "'");
+                    fims.httpDelete(retrievedService.id, callback);
+                }
+            }, callback);
+        },
+        (callback) => {
+            async.each(services, (service, callback) => {
+                if (service.id) {
+                    return callback();
+                }
+
+                console.log("Inserting Service '" + service.label + "'");
+                return fims.httpPost(servicesUrl, service, (err, postedService) => {
+                    service.id = postedService.id;
+                    callback();
+                });
             }, callback);
         }
     ], (err) => {

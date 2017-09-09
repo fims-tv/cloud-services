@@ -9,3 +9,5 @@ media-repository/build/fims-media-repo-api-package.zip
 /.vscode
 /service-registry/build-test1
 /job-processor-service/build-test1
+/media-repository/build
+/transform-service/build
