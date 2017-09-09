@@ -46,6 +46,35 @@ echo #########################
 
 
 echo #########################
+echo Build trigger lambda for workflow
+cd ..\workflow\trigger-workfow-from-lambda
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow validate metadata lambda step
+cd ..\workflow\validate-metadata
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow copy to private bucket lambda step
+cd ..\workflow\copy-essence-to-private-bucket
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow remove essence from public bucket lambda step
+cd ..\workflow\remove-essence-from-public-bucket
+node build.js
+cd ..\..\deploy
+echo #########################
+
+
+echo #########################
 echo Execute Terraform Plan
 echo #########################
 
