@@ -107,7 +107,7 @@ function createServices(serviceUrls) {
                         [
                             new fims.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
                         ],
-                        "fims:AmeJob",
+                        "fims:TransformJob",
                         [
                             jobProfiles.CreateProxy.id ? jobProfiles.CreateProxy.id : jobProfiles.CreateProxy,
                             jobProfiles.ExtractThumbnail.id ? jobProfiles.ExtractThumbnail.id : jobProfiles.ExtractThumbnail
