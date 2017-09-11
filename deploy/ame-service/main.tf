@@ -82,7 +82,6 @@ resource "aws_iam_role_policy_attachment" "role-policy-lambda-full-access" {
   policy_arn = "arn:aws:iam::aws:policy/AWSLambdaFullAccess"
 }
 
-
 #################################
 #  Lambda : rest-api-ame_service_lambda
 #################################

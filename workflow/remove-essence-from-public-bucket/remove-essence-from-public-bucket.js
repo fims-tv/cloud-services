@@ -6,8 +6,20 @@ exports.handler = (event, context, callback) => {
     var jsonld = event.worflow_param.src_key;
     var essence = event.worflow_param.essence;
 
-    s3.deleteObject({ Bucket: bucket, Key: jsonld });
-    s3.deleteObject({ Bucket: bucket, Key: essence });
+    console.log("Removing s3 object { bucket: " + bucket + ", key: " + jsonld + " }");
+    s3.deleteObject({ Bucket: bucket, Key: jsonld }, (err) => {
+        if (err) {
+            console.error(err);
+            return callback(err, event);
+        }
+        console.log("Removing s3 object { bucket: " + bucket + ", key: " + essence + " }");
+        s3.deleteObject({ Bucket: bucket, Key: essence }, (err) => {
+            if (err) {
+                console.error(err);
+                return callback(err, event);
+            }
 
-    callback(null, event);
+            callback(null, event);
+        });
+    });
 }
