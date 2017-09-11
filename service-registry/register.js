@@ -3,7 +3,7 @@ var fims = require("fims-aws").CORE;
 
 
 var jobProfiles = {
-    ExtractTechnicalMetadata : new fims.JobProfile(
+    ExtractTechnicalMetadata: new fims.JobProfile(
         "ExtractTechnicalMetadata",
         [
             new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
@@ -12,6 +12,29 @@ var jobProfiles = {
             new fims.JobParameter("ebucore:locator")
         ]
     ),
+    CreateProxy: new fims.JobProfile(
+        "CreateProxy",
+        [
+            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+        ],
+        [
+            new fims.JobParameter("ebucore:locator")
+        ]
+    ),
+    ExtractThumbnail: new fims.JobProfile(
+        "ExtractThumbnail",
+        [
+            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+        ],
+        [
+            new fims.JobParameter("ebucore:locator")
+        ],
+        [
+            new fims.JobParameter("ebucore:width"),
+            new fims.JobParameter("ebucore:height")
+        ]
+    ),
+
 }
 
 function createServices(serviceUrls) {
@@ -77,6 +100,29 @@ function createServices(serviceUrls) {
                     ]
                 ));
                 break;
+            case "transformServiceUrl":
+                serviceList.push(
+                    new fims.Service(
+                        "FFmpeg TransformService",
+                        [
+                            new fims.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
+                        ],
+                        "fims:AmeJob",
+                        [
+                            jobProfiles.CreateProxy.id ? jobProfiles.CreateProxy.id : jobProfiles.CreateProxy,
+                            jobProfiles.ExtractThumbnail.id ? jobProfiles.ExtractThumbnail.id : jobProfiles.ExtractThumbnail
+                        ],
+                        [
+                            serviceUrls.publicBucketUrl,
+                            serviceUrls.privateBucketUrl
+                        ],
+                        [
+                            serviceUrls.publicBucketUrl,
+                            serviceUrls.privateBucketUrl
+                        ]
+                    )
+                );
+                break;
         }
     }
 
@@ -111,7 +157,7 @@ process.stdin.on('end', function () {
     var servicesUrl = serviceUrls.serviceRegistryUrl + "/Service";
     var jobProfilesUrl = serviceUrls.serviceRegistryUrl + "/JobProfile";
 
-    var services; 
+    var services;
 
     fims.setServiceRegistryServicesURL(servicesUrl);
 
@@ -127,7 +173,7 @@ process.stdin.on('end', function () {
                     console.log("Updating JobProfile '" + jobProfile.label + "'");
                     fims.httpPut(jobProfile.id, jobProfile, callback);
                 } else {
-                    console.log("Removing " + (jobProfile.id ? "duplicate " : "" ) + "JobProfile '" + retrievedJobProfile.label + "'");
+                    console.log("Removing " + (jobProfile.id ? "duplicate " : "") + "JobProfile '" + retrievedJobProfile.label + "'");
                     fims.httpDelete(retrievedJobProfile.id, callback);
                 }
             }, callback);
@@ -159,7 +205,7 @@ process.stdin.on('end', function () {
                     console.log("Updating Service '" + service.label + "'");
                     fims.httpPut(service.id, service, callback);
                 } else {
-                    console.log("Removing " + (service.id ? "duplicate " : "" ) + "Service '" + retrievedService.label + "'");
+                    console.log("Removing " + (service.id ? "duplicate " : "") + "Service '" + retrievedService.label + "'");
                     fims.httpDelete(retrievedService.id, callback);
                 }
             }, callback);
