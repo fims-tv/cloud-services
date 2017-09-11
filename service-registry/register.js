@@ -32,12 +32,12 @@ function createServices(serviceUrls) {
                             jobProfiles.ExtractTechnicalMetadata.id ? jobProfiles.ExtractTechnicalMetadata.id : jobProfiles.ExtractTechnicalMetadata
                         ],
                         [
-                            "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt",
-                            "https://s3-us-east-1.amazonaws.com/us-east-1.rovers.pt"
+                            serviceUrls.publicBucketUrl,
+                            serviceUrls.privateBucketUrl
                         ],
                         [
-                            "https://s3-eu-west-1.amazonaws.com/eu-west-1.rovers.pt",
-                            "https://s3-us-east-1.amazonaws.com/us-east-1.rovers.pt"
+                            serviceUrls.publicBucketUrl,
+                            serviceUrls.privateBucketUrl
                         ]
                     )
                 );

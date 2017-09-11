@@ -98,6 +98,14 @@ module "workflow" {
 # Output variables
 #########################
 
+output publicBucketUrl {
+  value = "https://s3.amazonaws.com/${var.public-ingest-bucket}"
+}
+
+output privateBucketUrl {
+  value = "https://s3.amazonaws.com/${var.repo-bucket}"
+}
+
 output "serviceRegistryUrl" {
   value = "${module.service-registry.rest_service_url}"
 }
