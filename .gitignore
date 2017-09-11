@@ -11,3 +11,8 @@ media-repository/build/fims-media-repo-api-package.zip
 /job-processor-service/build-test1
 /media-repository/build
 /transform-service/build
+deploy/terraform.tfstate
+deploy/workflow/terraform.tfstate
+deploy/workflow/terraform.tfstate.backup
+deploy/terraform.tfstate
+transform-service/node_modules
