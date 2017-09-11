@@ -92,6 +92,8 @@ module "workflow" {
 
   public-ingest-bucket = "${var.public-ingest-bucket}"
   repo-bucket          = "${var.repo-bucket}"
+
+  serviceRegistryUrl = "${module.service-registry.rest_service_url}"
 }
 
 #########################

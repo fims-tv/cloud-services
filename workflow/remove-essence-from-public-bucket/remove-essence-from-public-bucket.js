@@ -2,9 +2,9 @@ var AWS = require('aws-sdk');
 var s3 = new AWS.S3();
 
 exports.handler = (event, context, callback) => {
-    var bucket = event.worflow_param.src_bucket;
-    var jsonld = event.worflow_param.src_key;
-    var essence = event.worflow_param.essence;
+    var bucket = event.workflow_param.src_bucket;
+    var jsonld = event.workflow_param.src_key;
+    var essence = event.workflow_param.essence;
 
     console.log("Removing s3 object { bucket: " + bucket + ", key: " + jsonld + " }");
     s3.deleteObject({ Bucket: bucket, Key: jsonld }, (err) => {

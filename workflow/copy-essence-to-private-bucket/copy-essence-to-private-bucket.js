@@ -22,18 +22,18 @@ exports.handler = (event, context, callback) => {
     //var movie = event.payload.movie;    
 
     //Get the Json from the workflow parameter
-    console.log("event.worflow_param = " + JSON.stringify(event.worflow_param));
-    var worflowParam = event.worflow_param;
+    console.log("event.workflow_param = " + JSON.stringify(event.workflow_param));
+    var workflowParam = event.workflow_param;
 
-    var essenceIngestedName = "ingested_" + Date.now() + "_" + worflowParam.essence;
+    var essenceIngestedName = "ingested_" + Date.now() + "_" + workflowParam.essence;
 
     var params = {
         Bucket: DEST_BUCKET,  //Destination Bucket,
-        CopySource: worflowParam.src_bucket + '/' + worflowParam.essence,
+        CopySource: workflowParam.src_bucket + '/' + workflowParam.essence,
         Key: essenceIngestedName
     };
 
-    worflowParam.essence_url = DEST_BUCKET_PATH + essenceIngestedName
+    workflowParam.essence_url = DEST_BUCKET_PATH + essenceIngestedName
 
     s3.copyObject(params, function (err, copyData) {
         if (err) {
@@ -46,7 +46,7 @@ exports.handler = (event, context, callback) => {
             //create an evelop  as callback(null, movie) doesn't return the movie element
             var jsonEnvelop = {};
             jsonEnvelop.payload = event.payload;
-            jsonEnvelop.worflow_param = worflowParam;
+            jsonEnvelop.workflow_param = workflowParam;
 
             console.log("callback(null, jsonEnvelop) ==> ", JSON.stringify(jsonEnvelop));
             callback(null, jsonEnvelop);

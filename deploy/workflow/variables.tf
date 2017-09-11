@@ -2,6 +2,7 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "account_id" {}
 variable "region" {}
+variable "serviceRegistryUrl" {}
 
 variable "lambdaExecutionRoleName" {
   default = "fims-workflow-lambda-execution-role"
@@ -54,3 +55,14 @@ variable "removeEssenceFromPublicBucketFunctionName" {
 variable "removeEssenceFromPublicBucketModuleName" {
   default = "remove-essence-from-public-bucket"
 }
+
+# Step 4
+variable "createAmeJobFunctionName" {
+  default = "fims-workflow-create-ame-job"
+}
+
+variable "createAmeJobModuleName" {
+  default = "create-ame-job"
+}
+
+

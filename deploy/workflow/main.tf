@@ -181,6 +181,32 @@ resource "aws_lambda_function" "removeEssenceFromPublicBucket" {
 }
 
 #################################
+#  Lambda : Step 4 Create AME Job
+#################################
+
+resource "aws_lambda_function" "createAmeJob" {
+  filename         = "./../workflow/create-ame-job/build/create-ame-job-package.zip"
+  function_name    = "${var.createAmeJobFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.createAmeJobModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/create-ame-job/build/create-ame-job-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
+      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/"
+      JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
+      JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
+      JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
+    }
+  }
+}
+
+
+#################################
 #  aws_iam_role : IAM role for state machine executions
 #################################
 
@@ -230,7 +256,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-steps2" {
 }
 
 #################################
-#  Step Functions : FeedIngestWorflow
+#  Step Functions : FeedIngestWorkflow
 #################################
 
 resource "aws_sfn_state_machine" "stepWorkflow" {
@@ -257,7 +283,7 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
 			"Resource": "${aws_lambda_function.removeEssenceFromPublicBucket.arn}",
 			"End": true
 		}
-    }
+  }
 }
 EOF
 }

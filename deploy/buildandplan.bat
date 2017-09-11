@@ -1,3 +1,5 @@
+@echo off
+
 echo #########################
 echo Master Build Script 
 echo #########################
@@ -78,6 +80,14 @@ echo #########################
 echo #########################
 echo Build workflow remove essence from public bucket lambda step
 cd ..\workflow\remove-essence-from-public-bucket
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow create ame job lambda step
+cd ..\workflow\create-ame-job
 call npm update
 node build.js
 cd ..\..\deploy

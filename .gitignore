@@ -16,3 +16,5 @@ deploy/workflow/terraform.tfstate
 deploy/workflow/terraform.tfstate.backup
 deploy/terraform.tfstate
 transform-service/node_modules
+/workflow/create-ame-job/build
+/workflow/create-ame-job/node_modules

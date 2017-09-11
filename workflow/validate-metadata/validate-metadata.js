@@ -66,13 +66,13 @@ exports.handler = (event, context, callback) => {
             console.log("JSON Object = " + JSON.stringify(jsonObj));
             var essence = validateMedata(callback, jsonObj)
 
-            var jsonWorflowParam = {};
-            jsonWorflowParam.src_bucket = srcBucket;
-            jsonWorflowParam.src_key = srcKey;
-            jsonWorflowParam.essence = essence;
+            var jsonWorkflowParam = {};
+            jsonWorkflowParam.src_bucket = srcBucket;
+            jsonWorkflowParam.src_key = srcKey;
+            jsonWorkflowParam.essence = essence;
 
             var jsonEnvelop = {};
-            jsonEnvelop.worflow_param = jsonWorflowParam;
+            jsonEnvelop.workflow_param = jsonWorkflowParam;
             jsonEnvelop.payload = jsonObj;
 
             console.log("callback(null, jsonEnvelop) ==> ", JSON.stringify(jsonEnvelop));
