@@ -19,6 +19,18 @@ variable region {
 }
 
 #########################
+# Workflow Variables
+#########################
+
+variable "public-ingest-bucket" {
+  default = "fims-public-ingest"
+}
+
+variable "repo-bucket" {
+  default = "fims-private-repo"
+}
+
+#########################
 # Module registration 
 # Run a terraform get on each module before executing this script
 #########################
@@ -70,7 +82,6 @@ module "media-repository" {
   region     = "${var.region}"
 }
 
-
 module "workflow" {
   source = "./workflow"
 
@@ -78,7 +89,11 @@ module "workflow" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  public-ingest-bucket = "${var.public-ingest-bucket}"
+  repo-bucket          = "${var.repo-bucket}"
 }
+
 #########################
 # Output variables
 #########################

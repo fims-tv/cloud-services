@@ -4,7 +4,6 @@ provider "aws" {
   region     = "${var.region}"
 }
 
-
 #################################
 #  aws_iam_role : iam_for_exec_lambda
 #################################
@@ -29,7 +28,6 @@ resource "aws_iam_role" "iam_for_exec_lambda" {
 EOF
 }
 
-
 resource "aws_lambda_permission" "allow_bucket" {
   statement_id  = "AllowExecutionFromS3Bucket"
   action        = "lambda:InvokeFunction"
@@ -38,11 +36,11 @@ resource "aws_lambda_permission" "allow_bucket" {
   source_arn    = "${aws_s3_bucket.public-ingest-bucket.arn}"
 }
 
-
 resource "aws_iam_policy" "log_policy" {
-    name        = "log_policy"
-    description = "Policy to write to log"
-    policy = <<EOF
+  name        = "log_policy"
+  description = "Policy to write to log"
+
+  policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -59,15 +57,15 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "role-policy-log" {
-    role       = "${aws_iam_role.iam_for_exec_lambda.name}"
-    policy_arn = "${aws_iam_policy.log_policy.arn}"
+  role       = "${aws_iam_role.iam_for_exec_lambda.name}"
+  policy_arn = "${aws_iam_policy.log_policy.arn}"
 }
 
-
 resource "aws_iam_policy" "steps_policy" {
-    name        = "steps_policy"
-    description = "Policy to execute Step Function"
-    policy = <<EOF
+  name        = "steps_policy"
+  description = "Policy to execute Step Function"
+
+  policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -82,16 +80,15 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "role-policy-steps" {
-    role       = "${aws_iam_role.iam_for_exec_lambda.name}"
-    policy_arn = "${aws_iam_policy.steps_policy.arn}"
+  role       = "${aws_iam_role.iam_for_exec_lambda.name}"
+  policy_arn = "${aws_iam_policy.steps_policy.arn}"
 }
 
-
-
 resource "aws_iam_policy" "S3_policy" {
-    name        = "S3_policy"
-    description = "Policy to access S3 bucket objects"
-    policy = <<EOF
+  name        = "S3_policy"
+  description = "Policy to access S3 bucket objects"
+
+  policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -106,20 +103,9 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "role-policy-S3" {
-    role       = "${aws_iam_role.iam_for_exec_lambda.name}"
-    policy_arn = "${aws_iam_policy.S3_policy.arn}"
+  role       = "${aws_iam_role.iam_for_exec_lambda.name}"
+  policy_arn = "${aws_iam_policy.S3_policy.arn}"
 }
-
-
-
-
-
-
-
-
-
-
-
 
 #################################
 #  Lambda : triggerWorkflowFromLambda
@@ -130,19 +116,17 @@ resource "aws_lambda_function" "triggerWorkflowFromLambda" {
   function_name    = "${var.triggerWorkflowLambdaFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.triggerWorkflowLambdaModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../../workflow/trigger-workfow-from-lambda/build/trigger-workflow-from-lambda-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../workflow/trigger-workfow-from-lambda/build/trigger-workflow-from-lambda-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "15"
   memory_size      = "128"
 
- environment {
+  environment {
     variables = {
       STATE_MACHINE_ARN = "${aws_sfn_state_machine.stepWorkflow.id}"
     }
+  }
 }
-}
-
-
 
 #################################
 #  Lambda : Step 1 Validate metadata
@@ -153,11 +137,10 @@ resource "aws_lambda_function" "validateMetadata" {
   function_name    = "${var.validateMetadataFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.validateMetadataModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../../workflow/validate-metadata/build/workflow-validate-metadata-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../workflow/validate-metadata/build/workflow-validate-metadata-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "30"
   memory_size      = "256"
-
 }
 
 #################################
@@ -169,21 +152,18 @@ resource "aws_lambda_function" "copyEssenceToPrivateBucket" {
   function_name    = "${var.copyEssenceToPrivateBucketFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.copyEssenceToPrivateBucketModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../../workflow/copy-essence-to-private-bucket/build/workflow-copy-essence-to-private-bucket-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../workflow/copy-essence-to-private-bucket/build/workflow-copy-essence-to-private-bucket-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "30"
   memory_size      = "256"
 
-
-environment {
+  environment {
     variables = {
-      BUCKET_DESTINATION_PATH = "https://s3.amazonaws.com/${var.repo-bucket}/"
+      DEST_BUCKET      = "${var.repo-bucket}"
+      DEST_BUCKET_PATH = "https://s3.amazonaws.com/${var.repo-bucket}/"
     }
+  }
 }
-}
-
-
-
 
 #################################
 #  Lambda : Step 3 Remove essence from public bucket
@@ -194,13 +174,11 @@ resource "aws_lambda_function" "removeEssenceFromPublicBucket" {
   function_name    = "${var.removeEssenceFromPublicBucketFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.removeEssenceFromPublicBucketModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../../workflow/remove-essence-from-public-bucket/build/workflow-remove-essence-from-public-bucket-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../workflow/remove-essence-from-public-bucket/build/workflow-remove-essence-from-public-bucket-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "30"
   memory_size      = "256"
-
 }
-
 
 #################################
 #  aws_iam_role : IAM role for state machine executions
@@ -217,7 +195,7 @@ resource "aws_iam_role" "iam_for_state_machine_execution" {
       "Sid": "",
       "Effect": "Allow",
       "Principal": {
-        "Service": "states.us-east-1.amazonaws.com"
+        "Service": "states.${var.region}.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -226,11 +204,11 @@ resource "aws_iam_role" "iam_for_state_machine_execution" {
 EOF
 }
 
-
 resource "aws_iam_policy" "steps_policy2" {
-    name        = "steps_policy2"
-    description = "Policy to execute Step Function"
-    policy = <<EOF
+  name        = "steps_policy2"
+  description = "Policy to execute Step Function"
+
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -247,12 +225,9 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "role-policy-steps2" {
-    role       = "${aws_iam_role.iam_for_state_machine_execution.name}"
-    policy_arn = "${aws_iam_policy.steps_policy2.arn}"
+  role       = "${aws_iam_role.iam_for_state_machine_execution.name}"
+  policy_arn = "${aws_iam_policy.steps_policy2.arn}"
 }
-
-
-
 
 #################################
 #  Step Functions : FeedIngestWorflow
@@ -287,8 +262,6 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
 EOF
 }
 
-
-
 ##################################
 # aws_s3_bucket : repo-bucket
 ##################################
@@ -298,9 +271,10 @@ EOF
 ###################################
 
 resource "aws_s3_bucket" "repo-bucket" {
-    bucket = "${var.repo-bucket}"
-   # acl = "public-read"
-    policy = <<EOF
+  bucket = "${var.repo-bucket}"
+
+  # acl = "public-read"
+  policy = <<EOF
 {
   "Id": "bucket_policy_site",
   "Version": "2012-10-17",
@@ -317,16 +291,14 @@ resource "aws_s3_bucket" "repo-bucket" {
   ]
 }
 EOF
-    website {
-        index_document = "index.html"
-        error_document = "error.html"
-    }
-    tags {
-    }
-    
+
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+  }
+
+  tags {}
 }
-
-
 
 ##################################
 # aws_s3_bucket : public-ingest-bucket
@@ -338,10 +310,7 @@ EOF
 resource "aws_s3_bucket" "public-ingest-bucket" {
   bucket = "${var.public-ingest-bucket}"
   acl    = "private"
-
-
 }
-
 
 resource "aws_s3_bucket_notification" "public-ingest-bucket_notification" {
   bucket = "${aws_s3_bucket.public-ingest-bucket.id}"
@@ -349,18 +318,13 @@ resource "aws_s3_bucket_notification" "public-ingest-bucket_notification" {
   lambda_function {
     lambda_function_arn = "${aws_lambda_function.triggerWorkflowFromLambda.arn}"
     events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = "txt"
-  } 
+    filter_suffix       = "jsonld"
+  }
 }
-
-
-
-
 
 ##################################
 # Output 
 ##################################
-
 
 
 #output "GenerateAndTransformFeedarn" {
@@ -368,8 +332,5 @@ resource "aws_s3_bucket_notification" "public-ingest-bucket_notification" {
 #}
 
 
-
 ########################################
-
-
 

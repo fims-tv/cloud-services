@@ -6,8 +6,8 @@ exports.handler = (event, context, callback) => {
     var jsonld = event.worflow_param.src_key;
     var essence = event.worflow_param.essence;
 
-    s3.deleteObject( { Bucket: bucket, Key: jsonld});
-    s3.deleteObject( { Bucket: bucket, Key: essence});
+    s3.deleteObject({ Bucket: bucket, Key: jsonld });
+    s3.deleteObject({ Bucket: bucket, Key: essence });
 
     callback(null, event);
 }
