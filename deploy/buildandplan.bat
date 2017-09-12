@@ -94,6 +94,22 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
+echo Build workflow create transform job extract thumbnail lambda step
+cd ..\workflow\create-transform-job-extract-thumbnail
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow create transform job create proxy lambda step
+cd ..\workflow\create-transform-job-create-proxy
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
 echo Build workflow send-callback-to-wf-activity
 cd ..\workflow\send-callback-to-wf-activity
 call npm update

@@ -4,8 +4,6 @@ variable "account_id" {}
 variable "region" {}
 variable "serviceRegistryUrl" {}
 
-
-
 variable "lambdaExecutionRoleName" {
   default = "fims-workflow-lambda-execution-role"
 }
@@ -67,11 +65,25 @@ variable "createAmeJobModuleName" {
   default = "create-ame-job"
 }
 
+# Step 6
+variable "createTransformJobExtractThumbnailFunctionName" {
+  default = "fims-workflow-create-transform-job-extract-thumbnail"
+}
 
+variable "createTransformJobExtractThumbnailModuleName" {
+  default = "create-transform-job-create-thumbnail"
+}
 
+# Step 7
+variable "createTransformJobCreateProxyFunctionName" {
+  default = "fims-workflow-create-transform-job-create-proxy"
+}
+
+variable "createTransformJobCreateProxyModuleName" {
+  default = "create-transform-job-create-proxy"
+}
 
 # Call back for workflow activity
-
 
 variable "lambdaWorkflowActivityExecutionRoleName" {
   default = "fims-workflow-activity-lambda-execution-role"
