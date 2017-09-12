@@ -4,6 +4,8 @@ variable "account_id" {}
 variable "region" {}
 variable "serviceRegistryUrl" {}
 
+
+
 variable "lambdaExecutionRoleName" {
   default = "fims-workflow-lambda-execution-role"
 }
@@ -84,3 +86,31 @@ variable "createTransformJobCreateProxyModuleName" {
 }
 
 
+
+
+# Call back for workflow activity
+
+
+variable "lambdaWorkflowActivityExecutionRoleName" {
+  default = "fims-workflow-activity-lambda-execution-role"
+}
+
+variable "jobCompletionActivity" {
+  default = "FIMS-Job-Completion-Activity"
+}
+
+variable "sendCallbackToWFActivityFunctionName" {
+  default = "fims-workflow-send-callback-to-wf-activity"
+}
+
+variable "sendCallbackToWFActivityModuleName" {
+  default = "send-callback-to-wf-activity"
+}
+
+variable "jobCompletionRestAPIName" {
+  default = "FIMS-Job-Completion-Activity"
+}
+
+variable "jobCompletionAPIStageName" {
+  default = "test"
+}

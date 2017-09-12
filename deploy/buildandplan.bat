@@ -109,6 +109,13 @@ node build.js
 cd ..\..\deploy
 echo #########################
 
+echo #########################
+echo Build workflow send-callback-to-wf-activity
+cd ..\workflow\send-callback-to-wf-activity
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
 
 echo #########################
 echo Execute Terraform Plan
