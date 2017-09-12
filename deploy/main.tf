@@ -26,9 +26,6 @@ variable "public-ingest-bucket" {
   default = "fims-public-ingest"
 }
 
-
-ingest-public-us-east-1-fims.tv
-
 variable "repo-bucket" {
   default = "fims-private-repo"
 }
