@@ -32,7 +32,7 @@ exports.handler = (event, context, callback) => {
 
                 console.log('taskToken=' + taskToken)
 
-                return callback(null, taskToken);
+                return callback(null, encodeURIComponent(taskToken));
             });
         },
         (taskToken, callback) => { // retrieving jobProfile(s) by label
