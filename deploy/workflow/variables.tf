@@ -4,8 +4,6 @@ variable "account_id" {}
 variable "region" {}
 variable "serviceRegistryUrl" {}
 
-
-
 variable "lambdaExecutionRoleName" {
   default = "fims-workflow-lambda-execution-role"
 }
@@ -85,11 +83,7 @@ variable "createTransformJobCreateProxyModuleName" {
   default = "create-transform-job-create-proxy"
 }
 
-
-
-
 # Call back for workflow activity
-
 
 variable "lambdaWorkflowActivityExecutionRoleName" {
   default = "fims-workflow-activity-lambda-execution-role"

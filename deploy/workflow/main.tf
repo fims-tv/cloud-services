@@ -196,21 +196,14 @@ resource "aws_lambda_function" "createAmeJob" {
 
   environment {
     variables = {
-      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
-      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/ame-service-output"
-      JOB_SUCCESS_URL = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
-      JOB_FAILED_URL = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
-      # JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
-      # JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
+      SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
+      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/ame-service-output"
+      JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
+      JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
       JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
-   
     }
   }
 }
-
-
-
-
 
 ###########################################################
 #  Lambda : Step 6 Create Transform Job - Extract Thumbnail
@@ -228,11 +221,11 @@ resource "aws_lambda_function" "createTransformJobExtractThumbnail" {
 
   environment {
     variables = {
-      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
-      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
-      JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
-      JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
-      JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
+      SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
+      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
+      JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
+      JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
     }
   }
 }
@@ -253,11 +246,11 @@ resource "aws_lambda_function" "createTransformJobCreateProxy" {
 
   environment {
     variables = {
-      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
-      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
-      JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
-      JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
-      JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
+      SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
+      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
+      JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
+      JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
     }
   }
 }
@@ -321,24 +314,58 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
 
   definition = <<EOF
 {
-	"Comment": "FIMS DEMO IBC",
-	"StartAt": "ValidateMetadata",
-	"States": {
-		"ValidateMetadata": {
-			"Type": "Task",
-      		"Resource": "${aws_lambda_function.validateMetadata.arn}",
-			"Next": "CopyEssenceToPrivateBucket"
-		},
-		"CopyEssenceToPrivateBucket": {
-			"Type": "Task",
-			"Resource": "${aws_lambda_function.copyEssenceToPrivateBucket.arn}",
-			"Next": "RemoveIngestFromPublicBucket"
-		},
-		"RemoveIngestFromPublicBucket": {
-			"Type": "Task",
-			"Resource": "${aws_lambda_function.removeEssenceFromPublicBucket.arn}",
-			"End": true
-		}
+  "Comment": "FIMS DEMO IBC",
+  "StartAt": "ValidateMetadata",
+  "States": {
+    "ValidateMetadata": {
+      "Type": "Task",
+          "Resource": "${aws_lambda_function.validateMetadata.arn}",
+      "Next": "CopyEssenceToPrivateBucket"
+    },
+    "CopyEssenceToPrivateBucket": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.copyEssenceToPrivateBucket.arn}",
+      "Next": "RemoveIngestFromPublicBucket"
+    },
+    "RemoveIngestFromPublicBucket": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.removeEssenceFromPublicBucket.arn}",
+      "Next": "AME-Job"
+    },
+    "AME-Job": {
+      "Type": "Parallel",
+      "End": true,
+      "Branches": [{
+          "Comment": "awaits Job Completion API to state workflow",
+          "StartAt": "Monitor-AME-Job",
+          "States": {
+            "Monitor-AME-Job": {
+              "Type": "Task",
+              "Resource": "${aws_sfn_activity.job_completion_activity.id}",
+              "TimeoutSeconds": 3600,
+              "HeartbeatSeconds": 1800,
+              "End": true
+            }
+          }
+        }, {
+          "StartAt": "Prepare-AME-Job",
+          "States": {
+            "Prepare-AME-Job": {
+              "Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+              "Type": "Wait",
+              "Seconds": 1,
+              "Next": "Submit-AME-Job"
+            },
+            "Submit-AME-Job": {
+              "Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+              "Type": "Task",
+              "Resource": "${aws_lambda_function.createAmeJob.arn}",
+              "End": true
+            }
+          }
+        }
+      ]
+    }
   }
 }
 EOF
@@ -421,7 +448,6 @@ resource "aws_sfn_activity" "job_completion_activity" {
 #  Instead a simple lambda using the Step Function API is used 
 ##############################
 
-
 #################################
 #  aws_iam_role : iam_for_exec_lambda
 #################################
@@ -467,7 +493,6 @@ resource "aws_iam_policy" "log_wf_activity_policy" {
 EOF
 }
 
-
 resource "aws_iam_role_policy_attachment" "role_wf_activity-policy-log" {
   role       = "${aws_iam_role.iam_for_exec_wf_activity_lambda.name}"
   policy_arn = "${aws_iam_policy.log_wf_activity_policy.arn}"
@@ -477,7 +502,6 @@ resource "aws_iam_role_policy_attachment" "role_wf_activity-policy-steps" {
   role       = "${aws_iam_role.iam_for_exec_wf_activity_lambda.name}"
   policy_arn = "${aws_iam_policy.steps_policy.arn}"
 }
-
 
 #################################
 #  Lambda : send-callback-to-wf-activity
@@ -493,7 +517,6 @@ resource "aws_lambda_function" "send-callback-to-wf-activity_lambda" {
   timeout          = "60"
   memory_size      = "1024"
 }
-
 
 ##############################
 #  API Gateway
@@ -544,11 +567,6 @@ resource "aws_api_gateway_deployment" "job_activity_completion_deployment" {
   rest_api_id = "${aws_api_gateway_rest_api.job_activity_completion_api.id}"
   stage_name  = "${var.jobCompletionAPIStageName}"
 }
-
-
-
-
-
 
 ##################################
 # Output 
