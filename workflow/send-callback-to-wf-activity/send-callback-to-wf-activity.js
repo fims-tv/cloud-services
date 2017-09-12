@@ -53,7 +53,7 @@ exports.handler = (event, context, callback) => {
 
     if (output === undefined)
         {
-           output = "service didn't generate any output data";
+           output = JSON.stringify( {"service_output" : "service didn't generate any output data"});
         }
 
     if (cause === undefined)
