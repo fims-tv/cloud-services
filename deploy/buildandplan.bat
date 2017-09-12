@@ -93,6 +93,22 @@ node build.js
 cd ..\..\deploy
 echo #########################
 
+echo #########################
+echo Build workflow create transform job extract thumbnail lambda step
+cd ..\workflow\create-transform-job-extract-thumbnail
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Build workflow create transform job create proxy lambda step
+cd ..\workflow\create-transform-job-create-proxy
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
 
 echo #########################
 echo Execute Terraform Plan

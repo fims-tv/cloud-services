@@ -197,7 +197,7 @@ resource "aws_lambda_function" "createAmeJob" {
   environment {
     variables = {
       SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
-      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/"
+      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/ame-service-output"
       JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
       JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
       JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
@@ -205,6 +205,59 @@ resource "aws_lambda_function" "createAmeJob" {
   }
 }
 
+
+
+
+
+###########################################################
+#  Lambda : Step 6 Create Transform Job - Extract Thumbnail
+###########################################################
+
+resource "aws_lambda_function" "createTransformJobExtractThumbnail" {
+  filename         = "./../workflow/create-transform-job-extract-thumbnail/build/create-transform-job-extract-thumbnail-package.zip"
+  function_name    = "${var.createTransformJobExtractThumbnailFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.createTransformJobExtractThumbnailModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/create-transform-job-extract-thumbnail/build/create-transform-job-extract-thumbnail-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
+      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
+      JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
+      JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
+    }
+  }
+}
+
+###########################################################
+#  Lambda : Step 7 Create Transform Job - Create Proxy
+###########################################################
+
+resource "aws_lambda_function" "createTransformJobCreateProxy" {
+  filename         = "./../workflow/create-transform-job-create-proxy/build/create-transform-job-create-proxy-package.zip"
+  function_name    = "${var.createTransformJobCreateProxyFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.createTransformJobCreateProxyModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/create-transform-job-create-proxy/build/create-transform-job-create-proxy-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}",
+      JOB_OUTPUT_LOCATION = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_SUCCESS_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/success?taskToken="
+      JOB_FAILED_URL = "https://0000000000.execute-api.us-east-1.amazonaws.com/demo/fail?taskToken="
+      JOB_PROCESS_ACTIVITY_ARN = "arn:aws:states:us-east-1:000000000000:activity:Process-Job-Completion"
+    }
+  }
+}
 
 #################################
 #  aws_iam_role : IAM role for state machine executions

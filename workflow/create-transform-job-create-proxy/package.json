@@ -1,7 +1,7 @@
 {
-  "name": "create-ame-job-step-function",
+  "name": "create-transform-job-create-proxy-step-function",
   "version": "0.0.1",
-  "description": "Step Function for creating an AME Job",
+  "description": "Step Function for creating a Transform Job for creating a proxy",
   "author": "Joost Rovers <joost.rovers@glookast.com>",
   "engines": {
     "node": "~4.3.2"
