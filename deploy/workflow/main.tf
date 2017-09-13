@@ -374,7 +374,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-steps2" {
 #################################
 
 resource "aws_sfn_state_machine" "stepWorkflow" {
-  name     = "FIMS_Ingest_Workflow"
+  name     = "${var.stepWorkflowName}"
   role_arn = "${aws_iam_role.iam_for_state_machine_execution.arn}"
 
   definition = <<EOF
