@@ -36,13 +36,13 @@ node build.js
 cd ..\deploy
 echo #########################
 
-rem echo #########################
-rem echo Build transform service  project
-rem cd ..\transform-service
-rem call npm update
-rem node installer.js package
-rem cd ..\deploy
-rem echo #########################
+echo #########################
+echo Build transform service  project
+cd ..\transform-service
+call npm update
+node build.js
+cd ..\deploy
+echo #########################
 
 echo #########################
 echo Build media repository  project
@@ -120,6 +120,22 @@ echo #########################
 echo #########################
 echo Build workflow send-callback-to-wf-activity
 cd ..\workflow\send-callback-to-wf-activity
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Step 8. Build workflow update asset in media repo lambda step
+cd ..\workflow\update-asset-in-media-repo
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Step 9. Build workflow create asset in semantic repo lambda step
+cd ..\workflow\create-asset-in-semantic-repo
 call npm update
 node build.js
 cd ..\..\deploy

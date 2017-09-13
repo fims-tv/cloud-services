@@ -15,7 +15,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "aws-sdk": "^2.112.0",
-    "fims-core": "^0.0.6"
+    "fims-core": "^0.0.7"
   },
   "bugs": {
     "url": "https://github.com/fims-tv/aws-services/issues"
