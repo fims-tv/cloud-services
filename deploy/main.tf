@@ -73,6 +73,15 @@ module "ame-service" {
   region     = "${var.region}"
 }
 
+module "transform-service" {
+  source = "./transform-service"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+}
+
 module "media-repository" {
   source = "./media-repository"
 
@@ -122,6 +131,10 @@ output "jobProcessorServiceUrl" {
 
 output "ameServiceUrl" {
   value = "${module.ame-service.rest_service_url}"
+}
+
+output "transformServiceUrl" {
+  value = "${module.transform-service.rest_service_url}"
 }
 
 output "mediaRepositoryUrl" {

@@ -36,13 +36,13 @@ node build.js
 cd ..\deploy
 echo #########################
 
-rem echo #########################
-rem echo Build transform service  project
-rem cd ..\transform-service
-rem call npm update
-rem node installer.js package
-rem cd ..\deploy
-rem echo #########################
+echo #########################
+echo Build transform service  project
+cd ..\transform-service
+call npm update
+node build.js
+cd ..\deploy
+echo #########################
 
 echo #########################
 echo Build media repository  project

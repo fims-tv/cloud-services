@@ -1,8 +1,9 @@
+//"use strict";
+console.log('Loading function');
+
 var FIMS = require("fims-aws");
 
 var lambda = new FIMS.AWS.Lambda({ apiVersion: "2015-03-31" });
-
-var uuid = require("uuid");
 
 exports.handler = FIMS.API.handler;
 exports.FIMS = FIMS;
@@ -21,7 +22,7 @@ FIMS.setLogger("log", console.log);
 
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
     switch (resourceDescriptor.type) {
-        case "ProcessJob":
+        case "JobAssignment":
             return callback();
     }
 
@@ -33,43 +34,44 @@ FIMS.BL.get = (event, resourceDescriptor, callback) => {
 };
 
 FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
-    console.log("ZZWW" + resource.type);
-    
-    return originalBL.post(event, resourceDescriptor, resource, function (err, resource) {
-        if (err) {
-            return callback(err, resource);
-        }
-
-        switch (resource.type) {
-            case "ProcessJob":
-                var params = {
-                    FunctionName: "fims-transform-worker",
-                    InvocationType: "Event",
-                    LogType: "None",
-                    Payload: JSON.stringify({ "event": event, "processJob": resource })
-                };
-                return lambda.invoke(params, function (err, data) {
-                    if (err) {
-                        console.log(err, err.stack);
-                    }
-                    return callback(err, resource);
-                });
-            default:
+    if (resourceDescriptor.type !== resource.type) {
+        return callback("Failed to process POST of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
+    } else {
+        return originalBL.post(event, resourceDescriptor, resource, function (err, resource) {
+            if (err) {
                 return callback(err, resource);
+            }
 
-        }
-    });
+            switch (resource.type) {
+                case "JobAssignment":
+                    var params = {
+                        FunctionName: event.stageVariables.WorkerLambdaFunctionName,
+                        InvocationType: "Event",
+                        LogType: "None",
+                        Payload: JSON.stringify({ "event": event, "jobAssignment": resource })
+                    };
+                    return lambda.invoke(params, function (err, data) {
+                        if (err) {
+                            console.log(err, err.stack);
+                        }
+                        return callback(err, resource);
+                    });
+                default:
+                    return callback(err, resource);
+
+            }
+        });
+    }
 };
 
 FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
-    if (resource.id) {
-        return callback("Not implemented")
+    if (resourceDescriptor.type !== resource.type) {
+        return callback("Failed to process PUT of '" + resourceDescriptor.type + "' with resource type '" + resource.type);
     } else {
-        resource.id = event.stageVariables.PublicUrl + "/" + resource.type + "/" + uuid.v4();
-        return callback(null, resource);
+        return originalBL.put(event, resourceDescriptor, resource, callback);
     }
 };
 
 FIMS.BL.del = (event, resourceDescriptor, callback) => {
-    return callback("Not implemented");
+    return originalBL.del(event, resourceDescriptor, callback);
 };

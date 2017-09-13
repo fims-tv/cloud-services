@@ -26,8 +26,16 @@ variable "restApiLambdaFunctionName" {
   default = "transform-service-test1"
 }
 
+variable "restApiLambdaModuleName" {
+  default = "transform-service"
+}
+
 variable "workerApiLambdaFunctionName" {
   default = "fims-transform-worker-test1"
+}
+
+variable "workerApiLambdaModuleName" {
+  default = "lambda-worker"
 }
 
 variable "restApiName" {
