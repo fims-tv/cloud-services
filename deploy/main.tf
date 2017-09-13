@@ -1,6 +1,6 @@
-#########################
+##########################
 # Global Variables
-#########################
+##########################
 
 variable access_key {
   default = "type your access key"
