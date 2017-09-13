@@ -10,13 +10,8 @@ variable "lambdaExecutionRoleName" {
 
 # S3 buckets
 
-variable "public-ingest-bucket" {
-  default = "fims-public-ingest"
-}
-
-variable "repo-bucket" {
-  default = "fims-private-repo"
-}
+variable "public-ingest-bucket" {}
+variable "repo-bucket" {}
 
 # Lambda used in workflow
 
@@ -65,13 +60,22 @@ variable "createAmeJobModuleName" {
   default = "create-ame-job"
 }
 
+# Step 5
+variable "createAssetInMediaRepoFunctionName" {
+  default = "fims-workflow-create-asset-in-media-repo"
+}
+
+variable "createAssetInMediaRepoModuleName" {
+  default = "create-asset-in-media-repo"
+}
+
 # Step 6
 variable "createTransformJobExtractThumbnailFunctionName" {
   default = "fims-workflow-create-transform-job-extract-thumbnail"
 }
 
 variable "createTransformJobExtractThumbnailModuleName" {
-  default = "create-transform-job-create-thumbnail"
+  default = "create-transform-job-extract-thumbnail"
 }
 
 # Step 7

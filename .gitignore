@@ -24,3 +24,5 @@ transform-service/node_modules
 /workflow/create-transform-job-extract-thumbnail/build
 /deploy/main.tf.backup
 /deploy/terraform.tfstate.backup
+/workflow/create-asset-in-media-repo/node_modules
+/workflow/create-asset-in-media-repo/build

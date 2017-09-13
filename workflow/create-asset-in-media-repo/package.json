@@ -1,0 +1,27 @@
+{
+    "name": "create-asset-in-media-repo-step-function",
+    "version": "0.0.1",
+    "description": "Step Function for creating asset in media repo",
+    "author": "Joost Rovers <joost.rovers@glookast.com>",
+    "engines": {
+      "node": "~4.3.2"
+    },
+    "scripts": {},
+    "repository": {
+      "type": "git",
+      "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
+    },
+    "license": "Apache-2.0",
+    "dependencies": {
+      "async": "^2.5.0",
+      "aws-sdk": "^2.112.0",
+      "fims-core": "^0.0.6"
+    },
+    "bugs": {
+      "url": "https://github.com/fims-tv/aws-services/issues"
+    },
+    "homepage": "https://github.com/fims-tv/aws-services#readme",
+    "devDependencies": {
+      "archiver": "^2.0.3"
+    }
+  }

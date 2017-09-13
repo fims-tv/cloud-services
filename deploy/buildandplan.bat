@@ -62,7 +62,7 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow validate metadata lambda step
+echo Step 1. Build workflow validate metadata lambda step
 cd ..\workflow\validate-metadata
 call npm update
 node build.js
@@ -70,7 +70,7 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow copy to private bucket lambda step
+echo Step 2. Build workflow copy to private bucket lambda step
 cd ..\workflow\copy-essence-to-private-bucket
 call npm update
 node build.js
@@ -78,7 +78,7 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow remove essence from public bucket lambda step
+echo Step 3. Build workflow remove essence from public bucket lambda step
 cd ..\workflow\remove-essence-from-public-bucket
 call npm update
 node build.js
@@ -86,7 +86,7 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow create ame job lambda step
+echo Step 4. Build workflow create ame job lambda step
 cd ..\workflow\create-ame-job
 call npm update
 node build.js
@@ -94,7 +94,15 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow create transform job extract thumbnail lambda step
+echo Step 5. Build workflow create asset in media repo
+cd ..\workflow\create-asset-in-media-repo
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Step 6. Build workflow create transform job extract thumbnail lambda step
 cd ..\workflow\create-transform-job-extract-thumbnail
 call npm update
 node build.js
@@ -102,7 +110,7 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
-echo Build workflow create transform job create proxy lambda step
+echo Step 7. Build workflow create transform job create proxy lambda step
 cd ..\workflow\create-transform-job-create-proxy
 call npm update
 node build.js

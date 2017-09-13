@@ -14,9 +14,9 @@ var originalBL = {
     del: FIMS.BL.del
 };
 
-//FIMS.setLogger("error", console.error);
-//FIMS.setLogger("warn", console.warn);
-//FIMS.setLogger("log", console.log);
+FIMS.setLogger("error", console.error);
+FIMS.setLogger("warn", console.warn);
+FIMS.setLogger("log", console.log);
 
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
     switch (resourceDescriptor.type) {

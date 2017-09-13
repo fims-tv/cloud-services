@@ -1,21 +1,20 @@
-const request = require('request');
 const fs = require('fs');
-const _ = require('underscore');
 const async = require('async');
 const AWS = require('aws-sdk');
 
-const REPO_URL = "https://3hqs46cuwa.execute-api.us-east-1.amazonaws.com/test/"
-const BMCONTENT_ENDPT = REPO_URL + "BMContent"
-const BMESSENCE_ENDPT = REPO_URL + "BMEssence"
+var fims = require("fims-core");
 
 const CREDENTIALS_FILE = "./credentials.json"
 var s3 = new AWS.S3();
+
+const SERVICE_REGISTRY_URL = process.env.SERVICE_REGISTRY_URL;
+
+fims.setServiceRegistryServicesURL(SERVICE_REGISTRY_URL + "/Service");
 
 function getBMContent(jsonObj, essenceID) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
     var bmc = graph.find(function (bm) { return bm['@type'] == 'ebucore:BMContent' });
-    //.findWhere(graph, '{"@type":"ebucore:BMContent"}');
     if (bmc === null || bmc === undefined) {
         console.error("No BMContent found");
     }
@@ -48,10 +47,7 @@ function getBMContent(jsonObj, essenceID) {
         console.log("Adding essence to BMContent: " + JSON.stringify(bmc));
     }
 
-
-    var result = JSON.stringify(bmc);
-    console.log("Using BMContent: " + result);
-    return result;
+    return bmc;
 }
 
 function getByField(field) {
@@ -62,7 +58,6 @@ function getBMEssence(jsonObj) {
     var context = jsonObj["@context"]
     var graph = jsonObj["@graph"]
     var bme = graph.find(function (g) { return g['@type'] == 'ebucore:BMEssence' });
-    //var bme = _.findWhere(graph, '"@type":"ebucore:BMEssence"');
     if (bme === null || bme === undefined) {
         console.error("No BMEssence found");
     }
@@ -70,8 +65,6 @@ function getBMEssence(jsonObj) {
     delete bme['ebucore:hasPart'];
     bme["@type"] = "BMEssence";
     bme["@context"] = context;
-    var result = JSON.stringify(bme);
-    console.log("Using BMEssence: " + result);
     return bme;
 }
 
@@ -99,14 +92,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
     async.waterfall([
         function (callback) {
             var bme = getBMEssence(payload);
-            console.log('POST to ' + BMESSENCE_ENDPT);
-            console.log('payload: ' + JSON.stringify(bme, null, 2));
-            request({
-                url: BMESSENCE_ENDPT,
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(bme, null, 2)
-            }, callback)
+            return fims.postResource("ebucore:BMEssence", bme, callback);
         },
         function (response, body, callback) {
             console.log("Payload result:", body);
@@ -117,14 +103,7 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
             callback();
         }, function (callback) {
             var bmc = getBMContent(payload, essenceId)
-            console.log('POST to ' + BMCONTENT_ENDPT)
-            console.log('payload: ' + bmc)
-            request({
-                url: BMCONTENT_ENDPT,
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: bmc
-            }, callback)
+            return fims.postResource("ebucore:BMContent", bmc, callback);
         },
         function (response, body, callback) {
             console.log("Payload result:", body);
@@ -137,37 +116,49 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
 } else {
     exports.handler = (event, context, callback) => {
 
-        function nextStep(jsonEnvelop) {
-            console.log("Job Created Successfully -> Next")
-            callback(null, jsonEnvelop)
+        function nextStep(err, jsonEnvelop) {
+            if (err) {
+                console.error("Error", err);
+            }
+            return callback(err, jsonEnvelop)
         }
 
         console.log("Received event:", JSON.stringify(event, null, 2));
         // AFTER AN ASYNC JOB, THE JOB COMPLETION GOES IN THE EVENT CHAIN WITH THE TEXT "Job Succeed"
         // DEAL WITH EVENT LIKE AN ARRAY FOR THIS STEP AND CLEANUP EVENT
         var payload
-        var worflow_param
+        var workflow_param
+
 
         for (i = 0; i < event.length; i++) {
-            if (event[i] !== "Job Succeed") {
+            if (event[i].payload) {
                 payload = event[i].payload
-                worflow_param = event[i].worflow_param
+                workflow_param = event[i].workflow_param
+                break;
             }
         }
         if (payload === undefined) {
             console.error("No payload found");
         }
-        if (worflow_param === undefined) {
-            console.error("No worflow_param found");
+        if (workflow_param === undefined) {
+            console.error("No workflow_param found");
         }
 
         var essenceID = null;
         var bme
         async.waterfall([
             function (callback) {
+                console.log("Retrieving ame job at " + workflow_param.amejob_id);
+                fims.httpGet(workflow_param.amejob_id, callback);
+            },
+            function (ameJob, callback) {
+                console.log(JSON.stringify(ameJob, null, 2));
+                return callback(null, ameJob.jobOutput["ebucore:locator"]);
+            },
+            function (ame_output, callback) {
                 bme = getBMEssence(payload)
                 // add AME info
-                var bucket = worflow_param.ame_output.substring(worflow_param.ame_output.indexOf("/", 8) + 1);
+                var bucket = ame_output.substring(ame_output.indexOf("/", 8) + 1);
                 var key = bucket.substring(bucket.indexOf("/") + 1);
                 bucket = bucket.substring(0, bucket.indexOf("/"));
                 console.log("s3.getObject '" + key + "' on bucket '" + bucket + "'")
@@ -181,41 +172,26 @@ if (fs.existsSync(CREDENTIALS_FILE)) {
                         bme[key] = ameData[key];
                     }
                 }
-                console.log('POST to ' + BMESSENCE_ENDPT)
-                console.log('payload: ' + JSON.stringify(bme))
-                request({
-                    url: BMESSENCE_ENDPT,
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(bme)
-                }, callback)
+                return fims.postResource("ebucore:BMEssence", bme, callback)
             },
-            function (response, body, callback) {
-                console.log("Payload result:", body);
-                var createdObject = JSON.parse(body);
-                console.log("CreatedEssence:", JSON.stringify(createdObject, null, 2));
-                essenceId = createdObject.id; // not createdObject['@id'] ???
+            function (bmEssence, callback) {
+                console.log("CreatedEssence:", JSON.stringify(bmEssence, null, 2));
+                essenceId = bmEssence.id; // not createdObject['@id'] ???
                 console.log("CreatedEssenceId:", essenceId);
                 callback();
             }, function (callback) {
                 var bmc = getBMContent(payload, essenceId)
-                console.log('POST to ' + BMCONTENT_ENDPT)
-                console.log('payload: ' + bmc)
-                request({
-                    url: BMCONTENT_ENDPT,
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: bmc
-                }, callback)
+                return fims.postResource("ebucore:BMContent", bmc, callback);
             },
-            function (response, body, callback) {
-                console.log("Payload result:", body);
-                var createdObject = JSON.parse(body);
-                console.log("CreatedBMContent:", JSON.stringify(createdObject, null, 2));
-                var objectId = createdObject.id; // not createdObject['@id'] ???
+            function (bmContent, callback) {
+                console.log("CreatedBMContent:", JSON.stringify(bmContent, null, 2));
+                var objectId = bmContent.id; // not createdObject['@id'] ???
                 console.log("CreatedBMContentId:", objectId);
-                worflow_param.assetID = objectId
-                nextStep({ payload, worflow_param })
-            }]);
+                workflow_param.assetID = objectId
+                return callback();
+            }],
+        (err) => {
+            nextStep(err, {payload, workflow_param });
+        });
     }
 }

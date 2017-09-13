@@ -205,6 +205,27 @@ resource "aws_lambda_function" "createAmeJob" {
   }
 }
 
+#################################
+#  Lambda : Step 5 Create Asset in Media Repo
+#################################
+
+resource "aws_lambda_function" "createAssetInMediaRepo" {
+  filename         = "./../workflow/create-asset-in-media-repo/build/create-asset-in-media-repo-package.zip"
+  function_name    = "${var.createAssetInMediaRepoFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.createAssetInMediaRepoModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/create-asset-in-media-repo/build/create-asset-in-media-repo-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}"
+    }
+  }
+}
+
 ###########################################################
 #  Lambda : Step 6 Create Transform Job - Extract Thumbnail
 ###########################################################
@@ -334,7 +355,7 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
     },
     "AME-Job": {
       "Type": "Parallel",
-      "End": true,
+      "Next": "CreateAssetInMediaRepo",
       "Branches": [{
           "Comment": "awaits Job Completion API to state workflow",
           "StartAt": "Monitor-AME-Job",
@@ -360,6 +381,45 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
               "Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
               "Type": "Task",
               "Resource": "${aws_lambda_function.createAmeJob.arn}",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "CreateAssetInMediaRepo": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.createAssetInMediaRepo.arn}",
+      "Next": "Transform-Job-Extract-Thumbnail"
+    },
+    "Transform-Job-Extract-Thumbnail": {
+      "Type": "Parallel",
+      "End": true,
+      "Branches": [{
+          "Comment": "awaits Job Completion API to state workflow",
+          "StartAt": "Monitor-Transform-Job",
+          "States": {
+            "Monitor-Transform-Job": {
+              "Type": "Task",
+              "Resource": "${aws_sfn_activity.job_completion_activity.id}",
+              "TimeoutSeconds": 3600,
+              "HeartbeatSeconds": 1800,
+              "End": true
+            }
+          }
+        }, {
+          "StartAt": "Prepare-Transform-Job-Extract-Thumbnail",
+          "States": {
+            "Prepare-Transform-Job-Extract-Thumbnail": {
+              "Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+              "Type": "Wait",
+              "Seconds": 1,
+              "Next": "Submit-Transform-Job-Extract-Thumbnail"
+            },
+            "Submit-Transform-Job-Extract-Thumbnail": {
+              "Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+              "Type": "Task",
+              "Resource": "${aws_lambda_function.createTransformJobExtractThumbnail.arn}",
               "End": true
             }
           }
