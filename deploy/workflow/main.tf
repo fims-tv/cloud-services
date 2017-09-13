@@ -276,6 +276,50 @@ resource "aws_lambda_function" "createTransformJobCreateProxy" {
   }
 }
 
+###########################################################
+#  Lambda : Step 8 Update Asset in Media Repo
+###########################################################
+
+resource "aws_lambda_function" "updateAssetInMediaRepo" {
+  filename         = "./../workflow/update-asset-in-media-repo/build/update-asset-in-media-repo-package.zip"
+  function_name    = "${var.updateAssetInMediaRepoFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.updateAssetInMediaRepoModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/update-asset-in-media-repo/build/update-asset-in-media-repo-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}"
+    }
+  }
+}
+
+
+###########################################################
+#  Lambda : Step 9 Create Asset in Semantic Repo
+###########################################################
+
+resource "aws_lambda_function" "createAssetInSemanticRepo" {
+  filename         = "./../workflow/create-asset-in-semantic-repo/build/create-asset-in-semantic-repo-package.zip"
+  function_name    = "${var.createAssetInSemanticRepoFunctionName}"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.createAssetInSemanticRepoModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../workflow/create-asset-in-semantic-repo/build/create-asset-in-semantic-repo-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "30"
+  memory_size      = "256"
+
+  environment {
+    variables = {
+      SERVICE_REGISTRY_URL = "${var.serviceRegistryUrl}"
+    }
+  }
+}
+
+
 #################################
 #  aws_iam_role : IAM role for state machine executions
 #################################
@@ -394,12 +438,12 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
     },
     "Transform-Job-Extract-Thumbnail": {
       "Type": "Parallel",
-      "End": true,
+      "Next": "Transform-Job-Create-Proxy",
       "Branches": [{
           "Comment": "awaits Job Completion API to state workflow",
-          "StartAt": "Monitor-Transform-Job",
+          "StartAt": "Monitor-Transform-Job-Extract-Thumbnail",
           "States": {
-            "Monitor-Transform-Job": {
+            "Monitor-Transform-Job-Extract-Thumbnail": {
               "Type": "Task",
               "Resource": "${aws_sfn_activity.job_completion_activity.id}",
               "TimeoutSeconds": 3600,
@@ -425,6 +469,50 @@ resource "aws_sfn_state_machine" "stepWorkflow" {
           }
         }
       ]
+    },
+    "Transform-Job-Create-Proxy": {
+      "Type": "Parallel",
+      "Next": "UpdateAssetInMediaRepo",
+      "Branches": [{
+          "Comment": "awaits Job Completion API to state workflow",
+          "StartAt": "Monitor-Transform-Job-Create-Proxy",
+          "States": {
+            "Monitor-Transform-Job-Create-Proxy": {
+              "Type": "Task",
+              "Resource": "${aws_sfn_activity.job_completion_activity.id}",
+              "TimeoutSeconds": 3600,
+              "HeartbeatSeconds": 1800,
+              "End": true
+            }
+          }
+        }, {
+          "StartAt": "Prepare-Transform-Job-Create-Proxy",
+          "States": {
+            "Prepare-Transform-Job-Create-Proxy": {
+              "Comment": "Wait Step as the ProcessJob Activity needs to be available before the CreateJob step is executed",
+              "Type": "Wait",
+              "Seconds": 1,
+              "Next": "Submit-Transform-Job-Create-Proxy"
+            },
+            "Submit-Transform-Job-Create-Proxy": {
+              "Comment": "Task responsible to create the job, it uses the AWS Step Function SDK to get the token of the Process Job Activity",
+              "Type": "Task",
+              "Resource": "${aws_lambda_function.createTransformJobCreateProxy.arn}",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "UpdateAssetInMediaRepo": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.updateAssetInMediaRepo.arn}",
+      "Next": "CreateAssetInSemanticRepo"
+    },
+    "CreateAssetInSemanticRepo": {
+      "Type": "Task",
+      "Resource": "${aws_lambda_function.createAssetInSemanticRepo.arn}",
+      "End": true
     }
   }
 }

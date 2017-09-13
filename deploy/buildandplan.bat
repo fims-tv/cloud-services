@@ -126,6 +126,22 @@ cd ..\..\deploy
 echo #########################
 
 echo #########################
+echo Step 8. Build workflow update asset in media repo lambda step
+cd ..\workflow\update-asset-in-media-repo
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
+echo Step 9. Build workflow create asset in semantic repo lambda step
+cd ..\workflow\create-asset-in-semantic-repo
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+echo #########################
 echo Execute Terraform Plan
 echo #########################
 

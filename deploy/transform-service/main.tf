@@ -108,8 +108,8 @@ resource "aws_lambda_function" "transform_worker_lambda" {
   handler          = "${var.workerApiLambdaModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../transform-service/build/worker-lambda-package.zip"))}"
   runtime          = "nodejs4.3"
-  timeout          = "60"
-  memory_size      = "1024"
+  timeout          = "300"
+  memory_size      = "1536"
 }
 
 ##################################

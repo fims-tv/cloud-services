@@ -87,6 +87,25 @@ variable "createTransformJobCreateProxyModuleName" {
   default = "create-transform-job-create-proxy"
 }
 
+# Step 8
+variable "updateAssetInMediaRepoFunctionName" {
+  default = "fims-workflow-update-asset-in-media-repo"
+}
+
+variable "updateAssetInMediaRepoModuleName" {
+  default = "update-asset-in-media-repo"
+}
+
+# Step 9
+variable "createAssetInSemanticRepoFunctionName" {
+  default = "fims-workflow-create-semantic-in-media-repo"
+}
+
+variable "createAssetInSemanticRepoModuleName" {
+  default = "create-asset-in-semantic-repo"
+}
+
+
 # Call back for workflow activity
 
 variable "lambdaWorkflowActivityExecutionRoleName" {

@@ -18,6 +18,15 @@ exports.handler = (event, context, callback) => {
     console.log("Event:");
     console.log(JSON.stringify(event, null, 2));
 
+    if (event.constructor === Array) {
+        for (var i = 0; i < event.length; i++) {
+            if (event[i].workflow_param) {
+                event = event[i];
+                break;
+            }
+        }
+    }
+
     async.waterfall([
         (callback) => { // retrieving taskToken
             return stepfunctions.getActivityTask({ activityArn: JOB_PROCESS_ACTIVITY_ARN }, function (err, data) {

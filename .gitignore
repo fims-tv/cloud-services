@@ -27,3 +27,7 @@ transform-service/node_modules
 /workflow/create-asset-in-media-repo/node_modules
 /workflow/create-asset-in-media-repo/build
 /transform-service/node_modules
+/workflow/create-asset-in-semantic-repo/build
+/workflow/create-asset-in-semantic-repo/node_modules
+/workflow/update-asset-in-media-repo/build
+/workflow/update-asset-in-media-repo/node_modules
