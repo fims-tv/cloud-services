@@ -4,15 +4,15 @@ variable "account_id" {}
 variable "region" {}
 
 variable "repotTableName" {
-  default = "fims-service-registry-test1"
+  default = "fims-service-registry-ibc"
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-service-registry-lambda-execution-role-test1"
+  default = "fims-media-service-registry-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "service-registry-test1"
+  default = "service-registry-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -20,13 +20,13 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-service-registry-rest-api-test1"
+  default = "fims-service-registry-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {
-  default = "service-registry"
+  default = "service-registry-ibc"
 }

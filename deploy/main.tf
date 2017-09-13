@@ -23,11 +23,11 @@ variable region {
 #########################
 
 variable "public-ingest-bucket" {
-  default = "fims-public-ingest"
+  default = "public-ingest.ibc.fims.tv"
 }
 
 variable "repo-bucket" {
-  default = "fims-private-repo"
+  default = "private-repo.ibc.fims.tv"
 }
 
 #########################

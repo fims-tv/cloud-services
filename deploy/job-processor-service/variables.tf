@@ -5,15 +5,15 @@ variable "region" {}
 variable "serviceRegistryUrl" {}
 
 variable "repotTableName" {
-  default = "fims-job-processor-service-test1"
+  default = "fims-job-processor-service-ibc"
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-job-processor-service-lambda-execution-role-test1"
+  default = "fims-media-job-processor-service-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "job-processor-service-test1"
+  default = "job-processor-service-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -21,13 +21,13 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-job-processor-service-rest-api-test1"
+  default = "fims-job-processor-service-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {
-  default = "job-processor-service"
+  default = "job-processor-service-ibc"
 }

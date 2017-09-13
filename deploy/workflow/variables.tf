@@ -15,9 +15,14 @@ variable "repo-bucket" {}
 
 # Lambda used in workflow
 
+#Step workflow name
+variable "stepWorkflowName" {
+  default = "Fims-Ingest-Workflow-IBC"
+}
+
 # Initial Step
 variable "triggerWorkflowLambdaFunctionName" {
-  default = "fims-workflow-trigger-workflow-from-lambda"
+  default = "fims-workflow-trigger-workflow-from-lambda-ibc"
 }
 
 variable "triggerWorkflowLambdaModuleName" {
@@ -26,7 +31,7 @@ variable "triggerWorkflowLambdaModuleName" {
 
 # Step 1
 variable "validateMetadataFunctionName" {
-  default = "fims-workflow-validate-metadata"
+  default = "fims-workflow-validate-metadata-ibc"
 }
 
 variable "validateMetadataModuleName" {
@@ -35,7 +40,7 @@ variable "validateMetadataModuleName" {
 
 # Step 2
 variable "copyEssenceToPrivateBucketFunctionName" {
-  default = "fims-workflow-copy-essence-to-private-bucket"
+  default = "fims-workflow-copy-essence-to-private-bucket-ibc"
 }
 
 variable "copyEssenceToPrivateBucketModuleName" {
@@ -44,7 +49,7 @@ variable "copyEssenceToPrivateBucketModuleName" {
 
 # Step 3
 variable "removeEssenceFromPublicBucketFunctionName" {
-  default = "fims-workflow-remove-essence-from-public-bucket"
+  default = "fims-workflow-remove-essence-from-public-bucket-ibc"
 }
 
 variable "removeEssenceFromPublicBucketModuleName" {
@@ -53,7 +58,7 @@ variable "removeEssenceFromPublicBucketModuleName" {
 
 # Step 4
 variable "createAmeJobFunctionName" {
-  default = "fims-workflow-create-ame-job"
+  default = "fims-workflow-create-ame-job-ibc"
 }
 
 variable "createAmeJobModuleName" {
@@ -62,7 +67,7 @@ variable "createAmeJobModuleName" {
 
 # Step 5
 variable "createAssetInMediaRepoFunctionName" {
-  default = "fims-workflow-create-asset-in-media-repo"
+  default = "fims-workflow-create-asset-in-media-repo-ibc"
 }
 
 variable "createAssetInMediaRepoModuleName" {
@@ -71,7 +76,7 @@ variable "createAssetInMediaRepoModuleName" {
 
 # Step 6
 variable "createTransformJobExtractThumbnailFunctionName" {
-  default = "fims-workflow-create-transform-job-extract-thumbnail"
+  default = "fims-workflow-create-transform-job-extract-thumbnail-ibc"
 }
 
 variable "createTransformJobExtractThumbnailModuleName" {
@@ -80,7 +85,7 @@ variable "createTransformJobExtractThumbnailModuleName" {
 
 # Step 7
 variable "createTransformJobCreateProxyFunctionName" {
-  default = "fims-workflow-create-transform-job-create-proxy"
+  default = "fims-workflow-create-transform-job-create-proxy-ibc"
 }
 
 variable "createTransformJobCreateProxyModuleName" {
@@ -89,7 +94,7 @@ variable "createTransformJobCreateProxyModuleName" {
 
 # Step 8
 variable "updateAssetInMediaRepoFunctionName" {
-  default = "fims-workflow-update-asset-in-media-repo"
+  default = "fims-workflow-update-asset-in-media-repo-ibc"
 }
 
 variable "updateAssetInMediaRepoModuleName" {
@@ -98,7 +103,7 @@ variable "updateAssetInMediaRepoModuleName" {
 
 # Step 9
 variable "createAssetInSemanticRepoFunctionName" {
-  default = "fims-workflow-create-semantic-in-media-repo"
+  default = "fims-workflow-create-semantic-in-media-repo-ibc"
 }
 
 variable "createAssetInSemanticRepoModuleName" {
@@ -109,15 +114,15 @@ variable "createAssetInSemanticRepoModuleName" {
 # Call back for workflow activity
 
 variable "lambdaWorkflowActivityExecutionRoleName" {
-  default = "fims-workflow-activity-lambda-execution-role"
+  default = "fims-workflow-activity-lambda-execution-role-ibc"
 }
 
 variable "jobCompletionActivity" {
-  default = "FIMS-Job-Completion-Activity"
+  default = "FIMS-Job-Completion-Activity-ibc"
 }
 
 variable "sendCallbackToWFActivityFunctionName" {
-  default = "fims-workflow-send-callback-to-wf-activity"
+  default = "fims-workflow-send-callback-to-wf-activity-ibc"
 }
 
 variable "sendCallbackToWFActivityModuleName" {
@@ -125,9 +130,9 @@ variable "sendCallbackToWFActivityModuleName" {
 }
 
 variable "jobCompletionRestAPIName" {
-  default = "FIMS-Job-Completion-Activity"
+  default = "FIMS-Job-Completion-Activity-ibc"
 }
 
 variable "jobCompletionAPIStageName" {
-  default = "test"
+  default = "ibc"
 }

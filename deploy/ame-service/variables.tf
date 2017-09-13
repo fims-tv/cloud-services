@@ -4,15 +4,15 @@ variable "account_id" {}
 variable "region" {}
 
 variable "repotTableName" {
-  default = "fims-ame-test1" //mrss_table
+  default = "fims-ame-ibc" 
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-ame-lambda-execution-role-test1"
+  default = "fims-media-ame-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "ame-service-test1"
+  default = "ame-service-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -20,7 +20,7 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "workerApiLambdaFunctionName" {
-  default = "fims-ame-worker-test1"
+  default = "fims-ame-worker-ibc"
 }
 
 variable "workerApiLambdaModuleName" {
@@ -28,13 +28,13 @@ variable "workerApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-ame-rest-api-test1"
+  default = "fims-ame-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {
-  default = "ame-service"
+  default = "ame-service-ibc"
 }

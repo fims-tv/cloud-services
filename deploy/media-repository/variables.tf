@@ -4,15 +4,15 @@ variable "account_id" {}
 variable "region" {}
 
 variable "repotTableName" {
-  default = "fims-media-repo-test1"
+  default = "fims-media-repo-ibc"
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-repo-lambda-execution-role-test1"
+  default = "fims-media-repo-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "media-repo-test1"
+  default = "media-repo-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -20,13 +20,13 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-media-repository-rest-api-test1"
+  default = "fims-media-repository-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {
-  default = "media-repository"
+  default = "media-repository-ibc"
 }

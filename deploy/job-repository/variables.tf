@@ -4,15 +4,15 @@ variable "account_id" {}
 variable "region" {}
 
 variable "repotTableName" {
-  default = "fims-job-repository-test1"
+  default = "fims-job-repository-ibc"
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-job-repository-lambda-execution-role-test1"
+  default = "fims-media-job-repository-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "job-repository-test1"
+  default = "job-repository-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -20,13 +20,13 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-job-repository-rest-api-test1"
+  default = "fims-job-repository-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {
-  default = "job-repository"
+  default = "job-repository-ibc"
 }
