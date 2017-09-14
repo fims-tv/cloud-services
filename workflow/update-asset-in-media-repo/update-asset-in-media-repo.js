@@ -116,65 +116,67 @@ exports.handler = (event, context, callback) => {
         console.error("No workflow_param found");
     }
 
-  var essenceId = null;
+  var proxyEssenceId = null;
+  var thumbnailEssenceId = null;
   var updatedBmc = null;
+  var updatedBmc2 = null;
 
   async.waterfall([
-        function (callback) {
+        function (callback) {  // Get the proxy transform job from the id
             console.log("Retrieving Proxy Transcode job at " + workflow_param.transformjob_createproxy_id);
             fims.httpGet(workflow_param.transformjob_createproxy_id, callback);
         },
-        function (proxyJob, callback) {
+        function (proxyJob, callback) {  // extract the created proxy file path from the job
             console.log(JSON.stringify(proxyJob, null, 2));
             return callback(null, proxyJob.jobOutput["ebucore:locator"]);
         },
-        function (proxy_locator, callback) {
+        function (proxy_locator, callback) {   //create the new essence and post it to the media repo
             console.log("proxy locator for proxy = " +  proxy_locator ); 
-            bme = CreateBMEssenceShell("proxy",proxy_locator);
+           var bme = CreateBMEssenceShell("proxy",proxy_locator);
             console.log("proxy essence to be created = " +  JSON.stringify(bme, null, 2) ); 
             return fims.postResource("ebucore:BMEssence", bme, callback);
         },
         
-        function (bmEssence, callback) {
+        function (bmEssence, callback) {  // extract the new proxy essence id and store it in global variable 
             console.log("CreatedEssence:", JSON.stringify(bmEssence, null, 2));
-            essenceId = bmEssence.id; 
-            console.log("CreatedEssenceId:", essenceId);
+            proxyEssenceId = bmEssence.id; 
+            console.log("Created proxy EssenceId:", proxyEssenceId);
             callback();
         },
-        function ( callback) {
+       
+        function (callback) { // Get the thumbnail transform job from the id
+            console.log("Retrieving thumbnail Transcode job at " + workflow_param.transformjob_extractthumbnail_id);
+            fims.httpGet(workflow_param.transformjob_extractthumbnail_id, callback);
+        },
+        function (thumbnailJob, callback) {   // extract the created thumbnail file path from the job
+            console.log(JSON.stringify(thumbnailJob, null, 2));
+            return callback(null, thumbnailJob.jobOutput["ebucore:locator"]);
+        },
+        function (thumbnail_locator, callback) { // 
+            console.log("thumbnail locator for thumbnail = " +  thumbnail_locator ); 
+            var bme = CreateBMEssenceShell("thumbnail",thumbnail_locator);
+            console.log("thumbnail essence to be created = " +  JSON.stringify(bme, null, 2) ); 
+            return fims.postResource("ebucore:BMEssence", bme, callback);
+            },
+        
+        function (bmEssence, callback) { //create the new thumbnail essence and post it to the media repo
+            console.log("CreatedEssence:", JSON.stringify(bmEssence, null, 2));
+            thumbnailEssenceId = bmEssence.id; 
+            console.log("CreatedEssenceId:",thumbnailEssenceId );
+            return callback();
+        },
+        function ( callback) {  // Get the latest version of BMContent from id
             console.log("Get Latest version of BMContent:", workflow_param.assetID);
             fims.httpGet(workflow_param.assetID, callback);
 
         },
-        function (bmc, callback) {
-            updatedBmc =  AddEssencetoBMContent (bmc, essenceId); //Just add, don't put yet.
-
-            return callback();
-        },
-        function (callback) {
-            console.log("Retrieving thumbnail Transcode job at " + workflow_param.transformjob_extractthumbnail_id);
-            fims.httpGet(workflow_param.transformjob_extractthumbnail_id, callback);
-        },
-        function (thumbnailJob, callback) {
-            console.log(JSON.stringify(thumbnailJob, null, 2));
-            return callback(null, thumbnailJob.jobOutput["ebucore:locator"]);
-        },
-        function (thumbnail_locator, callback) {
-            console.log("thumbnail locator for thumbnail = " +  thumbnail_locator ); 
-            bme = CreateBMEssenceShell("thumbnail",thumbnail_locator);
-            console.log("thumbnail essence to be created = " +  JSON.stringify(bme, null, 2) ); 
-            return fims.postResource("ebucore:BMEssence", bme, callback);
-        },
-        
-        function (bmEssence, callback) {
-            console.log("CreatedEssence:", JSON.stringify(bmEssence, null, 2));
-            essenceId = bmEssence.id; 
-            console.log("CreatedEssenceId:", essenceId);
-            callback();
-        },
-        , function (bmc, callback) {
-            updatedBmc =  AddEssencetoBMContent (bmc, essenceId);
-            return fims.httpPut (updatedBmc.id, updatedBmc, callback);
+        function (bmc, callback) {  // add proxy essence to BMContent 
+            console.log("BMContent before AddEssencetoBMContent:", JSON.stringify(bmc, null, 2));
+            updatedBmc =  AddEssencetoBMContent (bmc, proxyEssenceId); //Just add, don't put yet.
+            console.log("BMContent after adding proxy and before adding thumbnail:", JSON.stringify(updatedBmc, null, 2));
+            updatedBmc2 =  AddEssencetoBMContent (updatedBmc, thumbnailEssenceId);
+            console.log("BMContent after adding proxy and thumbnail:", JSON.stringify(updatedBmc2, null, 2));
+            return fims.httpPut (updatedBmc2.id, updatedBmc2, callback);
         },
         function (bmContent, callback) {
             console.log("updated BMContent:", JSON.stringify(bmContent, null, 2));
