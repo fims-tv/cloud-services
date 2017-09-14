@@ -118,7 +118,8 @@ exports.handler = (event, context, callback) => {
 
   var essenceId = null;
   var updatedBmc = null;
-    async.waterfall([
+
+  async.waterfall([
         function (callback) {
             console.log("Retrieving Proxy Transcode job at " + workflow_param.transformjob_createproxy_id);
             fims.httpGet(workflow_param.transformjob_createproxy_id, callback);
@@ -144,13 +145,36 @@ exports.handler = (event, context, callback) => {
             console.log("Get Latest version of BMContent:", workflow_param.assetID);
             fims.httpGet(workflow_param.assetID, callback);
 
-        }, function (bmc, callback) {
+        },
+        function (bmc, callback) {
+            updatedBmc =  AddEssencetoBMContent (bmc, essenceId); //Just add, don't put yet.
 
+            return callback();
+        },
+        function (callback) {
+            console.log("Retrieving thumbnail Transcode job at " + workflow_param.transformjob_extractthumbnail_id);
+            fims.httpGet(workflow_param.transformjob_extractthumbnail_id, callback);
+        },
+        function (thumbnailJob, callback) {
+            console.log(JSON.stringify(thumbnailJob, null, 2));
+            return callback(null, thumbnailJob.jobOutput["ebucore:locator"]);
+        },
+        function (thumbnail_locator, callback) {
+            console.log("thumbnail locator for thumbnail = " +  thumbnail_locator ); 
+            bme = CreateBMEssenceShell("thumbnail",thumbnail_locator);
+            console.log("thumbnail essence to be created = " +  JSON.stringify(bme, null, 2) ); 
+            return fims.postResource("ebucore:BMEssence", bme, callback);
+        },
+        
+        function (bmEssence, callback) {
+            console.log("CreatedEssence:", JSON.stringify(bmEssence, null, 2));
+            essenceId = bmEssence.id; 
+            console.log("CreatedEssenceId:", essenceId);
+            callback();
+        },
+        , function (bmc, callback) {
             updatedBmc =  AddEssencetoBMContent (bmc, essenceId);
-           
-           return fims.httpPut (updatedBmc.id, updatedBmc, callback);
-
-            
+            return fims.httpPut (updatedBmc.id, updatedBmc, callback);
         },
         function (bmContent, callback) {
             console.log("updated BMContent:", JSON.stringify(bmContent, null, 2));

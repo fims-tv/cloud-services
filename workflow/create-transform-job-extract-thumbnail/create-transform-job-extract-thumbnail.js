@@ -62,7 +62,7 @@ exports.handler = (event, context, callback) => {
             return fims.postResource("fims:TransformJob", transformJob, callback);
         },
         (transformJob, callback) => {
-            event.workflow_param.transformjob_createproxy_id = transformJob.id;
+            event.workflow_param.transformjob_extractthumbnail_id = transformJob.id;
 
             var jobProcess = new fims.JobProcess(transformJob.id);
 
