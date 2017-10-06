@@ -10,7 +10,7 @@ This repository contains an example implementation of the FIMS 2.0.0 framework u
 2.0.0
 
 ## Requirements for running the example
-* Node.js v4.3.2 and NPM 2.14.12 installed and accessible in PATH. Recommended is to use a node version manager, which allows you to quickly switch between node versions (see more info at [nvm-windows](https://github.com/coreybutler/nvm-windows)
+* Node.js v4.3.2 and NPM 2.14.12 installed and accessible in PATH. Recommended is to use a node version manager, which allows you to quickly switch between node versions (see more info at [nvm-windows](https://github.com/coreybutler/nvm-windows))
 * Terraform and available in PATH. See the [Terraform website](https://www.terraform.io/)
 * AWS account
 
@@ -29,4 +29,4 @@ This repository contains an example implementation of the FIMS 2.0.0 framework u
 To start the workflow you need to copy and paste a media file and a specific metadata file into the public-ingest bucket. Best strategy is to create manually a third bucket in which you upload a media and metadata files. From there you can then do a copy and paste into the public-ingest bucket. Then go to the 'Step Functions' section on the AWS console and follow the workflow.
 
 Example files can be found at URL:
-https://www.dropbox.com/sh/8drhcajgen4gycp/AABn1sWYHkthha42M9LZ6RsXa?dl=0
+https://www.dropbox.com/sh/8f3ei9tnr2e3na1/AABzP4iPVGXDAUtvOmXF37Aza?dl=0
