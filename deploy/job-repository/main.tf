@@ -98,8 +98,8 @@ resource "aws_lambda_function" "job-repository_lambda" {
 
 resource "aws_dynamodb_table" "repo_service_table" {
   name           = "${var.repotTableName}"
-  read_capacity  = 5
-  write_capacity = 5
+  read_capacity  = 1
+  write_capacity = 1
   hash_key       = "resource_type"
   range_key      = "resource_id"
 
