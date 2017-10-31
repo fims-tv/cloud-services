@@ -1,6 +1,0 @@
-{
-  "workflowExecutionRoleName": "fims-workflow-execution-role",
-  "stepFunctionStateMachine": "New-FIMS-NAB-Demo",
-  "workflowStateMachineFileName": "fims-state-machine-2.json",
-  "jobProcessorApiGatewayName": "fims-job-repo2"
-}
