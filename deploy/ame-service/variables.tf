@@ -4,7 +4,7 @@ variable "account_id" {}
 variable "region" {}
 
 variable "repotTableName" {
-  default = "fims-ame-ibc" 
+  default = "fims-ame-ibc"
 }
 
 variable "lambdaExecutionRoleName" {

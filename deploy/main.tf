@@ -109,8 +109,16 @@ module "workflow" {
 # Output variables
 #########################
 
+output publicBucket {
+  value = "${var.public-ingest-bucket}"
+}
+
 output publicBucketUrl {
   value = "https://s3.amazonaws.com/${var.public-ingest-bucket}"
+}
+
+output privateBucket {
+  value = "${var.repo-bucket}"
 }
 
 output privateBucketUrl {

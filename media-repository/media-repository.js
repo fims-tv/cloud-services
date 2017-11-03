@@ -18,14 +18,17 @@ FIMS.setLogger("error", console.error);
 FIMS.setLogger("warn", console.warn);
 FIMS.setLogger("log", console.log);
 
+var context = FIMS.CORE.getDefaultContext();
+context["@context"].BMContent = "ebucore:BMContent";
+context["@context"].BMEssence = "ebucore:BMEssence";
+
 FIMS.BL.accepts = (event, resourceDescriptor, callback) => {
     switch (resourceDescriptor.type) {
         case "BMEssence":
             return callback();
         case "BMContent":
-            return callback();   
+            return callback();
     }
-
 
     return originalBL.accepts(event, resourceDescriptor, callback);
 };

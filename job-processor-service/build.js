@@ -13,7 +13,7 @@ var fs = require("fs");
 //         Constants        //
 //////////////////////////////
 
-var REST_API_LAMBDA_PACKAGE_FILE = "./build-test1/rest-api-lambda-package.zip";
+var REST_API_LAMBDA_PACKAGE_FILE = "./build/rest-api-lambda-package.zip";
 
 
 //////////////////////////////
@@ -24,8 +24,8 @@ var workerlambdaFunction;
 var restApiLambdaFunction;
 
 function createRestApiLambdaPackage(callback) {
-    if (!fs.existsSync("./build-test1")) {
-        fs.mkdirSync("./build-test1");
+    if (!fs.existsSync("./build")) {
+        fs.mkdirSync("./build");
     }
 
     var output = fs.createWriteStream(REST_API_LAMBDA_PACKAGE_FILE);

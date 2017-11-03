@@ -82,11 +82,11 @@ resource "aws_iam_role_policy_attachment" "role-policy-DynamoDB" {
 #################################
 
 resource "aws_lambda_function" "job-repository_lambda" {
-  filename         = "./../job-repository/build-test1/rest-api-lambda-package.zip"
+  filename         = "./../job-repository/build/rest-api-lambda-package.zip"
   function_name    = "${var.restApiLambdaFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.restApiLambdaModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../job-repository/build-test1/rest-api-lambda-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../job-repository/build/rest-api-lambda-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "60"
   memory_size      = "1024"

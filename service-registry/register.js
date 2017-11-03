@@ -1,37 +1,39 @@
 var async = require("async");
-var fims = require("fims-aws").CORE;
-
+var core = require("fims-aws").CORE;
 
 var jobProfiles = {
-    ExtractTechnicalMetadata: new fims.JobProfile(
+    ExtractTechnicalMetadata: new core.JobProfile(
         "ExtractTechnicalMetadata",
         [
-            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+            new core.JobParameter("fims:inputFile", "fims:Locator"),
+            new core.JobParameter("fims:outputLocation", "fims:Locator")
         ],
         [
-            new fims.JobParameter("ebucore:locator")
+            new core.JobParameter("fims:outputFile", "fims:Locator")
         ]
     ),
-    CreateProxy: new fims.JobProfile(
+    CreateProxy: new core.JobProfile(
         "CreateProxy",
         [
-            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+            new core.JobParameter("fims:inputFile", "fims:Locator"),
+            new core.JobParameter("fims:outputLocation", "fims:Locator")
         ],
         [
-            new fims.JobParameter("ebucore:locator")
+            new core.JobParameter("fims:outputFile", "fims:Locator")
         ]
     ),
-    ExtractThumbnail: new fims.JobProfile(
+    ExtractThumbnail: new core.JobProfile(
         "ExtractThumbnail",
         [
-            new fims.JobParameter("ebucore:hasRelatedResource", "ebucore:BMEssence")
+            new core.JobParameter("fims:inputFile", "fims:Locator"),
+            new core.JobParameter("fims:outputLocation", "fims:Locator")
         ],
         [
-            new fims.JobParameter("ebucore:locator")
+            new core.JobParameter("fims:outputFile", "fims:Locator")
         ],
         [
-            new fims.JobParameter("ebucore:width"),
-            new fims.JobParameter("ebucore:height")
+            new core.JobParameter("ebucore:width"),
+            new core.JobParameter("ebucore:height")
         ]
     ),
 
@@ -45,67 +47,70 @@ function createServices(serviceUrls) {
         switch (prop) {
             case "ameServiceUrl":
                 serviceList.push(
-                    new fims.Service(
+                    new core.Service(
                         "MediaInfo AME Service",
                         [
-                            new fims.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
+                            new core.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
                         ],
                         "fims:AmeJob",
                         [
                             jobProfiles.ExtractTechnicalMetadata.id ? jobProfiles.ExtractTechnicalMetadata.id : jobProfiles.ExtractTechnicalMetadata
                         ],
                         [
-                            serviceUrls.publicBucketUrl,
-                            serviceUrls.privateBucketUrl
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
                         ],
                         [
-                            serviceUrls.publicBucketUrl,
-                            serviceUrls.privateBucketUrl
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
                         ]
                     )
                 );
                 break;
             case "jobProcessorServiceUrl":
-                serviceList.push(new fims.Service(
+                serviceList.push(new core.Service(
                     "Job Processor Service",
                     [
-                        new fims.ServiceResource("fims:JobProcess", serviceUrls[prop] + "/JobProcess")
+                        new core.ServiceResource("fims:JobProcess", serviceUrls[prop] + "/JobProcess")
                     ]
                 ));
                 break;
             case "jobRepositoryUrl":
-                serviceList.push(new fims.Service(
+                serviceList.push(new core.Service(
                     "Job Repository",
                     [
-                        new fims.ServiceResource("fims:AmeJob", serviceUrls[prop] + "/Job"),
-                        new fims.ServiceResource("fims:TransformJob", serviceUrls[prop] + "/Job")
+                        new core.ServiceResource("fims:AmeJob", serviceUrls[prop] + "/Job"),
+                        new core.ServiceResource("fims:CaptureJob", serviceUrls[prop] + "/Job"),
+                        new core.ServiceResource("fims:QAJob", serviceUrls[prop] + "/Job"),
+                        new core.ServiceResource("fims:TransferJob", serviceUrls[prop] + "/Job"),
+                        new core.ServiceResource("fims:TransformJob", serviceUrls[prop] + "/Job")
                     ]
                 ));
                 break;
             case "mediaRepositoryUrl":
-                serviceList.push(new fims.Service(
+                serviceList.push(new core.Service(
                     "Media Repository",
                     [
-                        new fims.ServiceResource("ebucore:BMContent", serviceUrls[prop] + "/BMContent"),
-                        new fims.ServiceResource("ebucore:BMEssence", serviceUrls[prop] + "/BMEssence")
+                        new core.ServiceResource("ebucore:BMContent", serviceUrls[prop] + "/BMContent"),
+                        new core.ServiceResource("ebucore:BMEssence", serviceUrls[prop] + "/BMEssence")
                     ]
                 ));
                 break;
             case "serviceRegistryUrl":
-                serviceList.push(new fims.Service(
+                serviceList.push(new core.Service(
                     "Service Registry",
                     [
-                        new fims.ServiceResource("fims:Service", serviceUrls[prop] + "/Service"),
-                        new fims.ServiceResource("fims:JobProfile", serviceUrls[prop] + "/JobProfile")
+                        new core.ServiceResource("fims:Service", serviceUrls[prop] + "/Service"),
+                        new core.ServiceResource("fims:JobProfile", serviceUrls[prop] + "/JobProfile")
                     ]
                 ));
                 break;
             case "transformServiceUrl":
                 serviceList.push(
-                    new fims.Service(
+                    new core.Service(
                         "FFmpeg TransformService",
                         [
-                            new fims.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
+                            new core.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
                         ],
                         "fims:TransformJob",
                         [
@@ -113,12 +118,12 @@ function createServices(serviceUrls) {
                             jobProfiles.ExtractThumbnail.id ? jobProfiles.ExtractThumbnail.id : jobProfiles.ExtractThumbnail
                         ],
                         [
-                            serviceUrls.publicBucketUrl,
-                            serviceUrls.privateBucketUrl
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
                         ],
                         [
-                            serviceUrls.publicBucketUrl,
-                            serviceUrls.privateBucketUrl
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
                         ]
                     )
                 );
@@ -159,10 +164,10 @@ process.stdin.on('end', function () {
 
     var services;
 
-    fims.setServiceRegistryServicesURL(servicesUrl);
+    core.setServiceRegistryServicesURL(servicesUrl);
 
     return async.waterfall([
-        (callback) => fims.httpGet(jobProfilesUrl, callback),
+        (callback) => core.httpGet(jobProfilesUrl, callback),
         (retrievedJobProfiles, callback) => {
             async.each(retrievedJobProfiles, (retrievedJobProfile, callback) => {
                 var jobProfile = jobProfiles[retrievedJobProfile.label];
@@ -171,10 +176,10 @@ process.stdin.on('end', function () {
                     jobProfile.id = retrievedJobProfile.id;
 
                     console.log("Updating JobProfile '" + jobProfile.label + "'");
-                    fims.httpPut(jobProfile.id, jobProfile, callback);
+                    core.httpPut(jobProfile.id, jobProfile, callback);
                 } else {
                     console.log("Removing " + (jobProfile.id ? "duplicate " : "") + "JobProfile '" + retrievedJobProfile.label + "'");
-                    fims.httpDelete(retrievedJobProfile.id, callback);
+                    core.httpDelete(retrievedJobProfile.id, callback);
                 }
             }, callback);
         },
@@ -185,7 +190,7 @@ process.stdin.on('end', function () {
                 }
 
                 console.log("Inserting JobProfile '" + jobProfile.label + "'");
-                return fims.httpPost(jobProfilesUrl, jobProfile, (err, postedJobProfile) => {
+                return core.httpPost(jobProfilesUrl, jobProfile, (err, postedJobProfile) => {
                     jobProfile.id = postedJobProfile.id;
                     callback();
                 });
@@ -193,7 +198,7 @@ process.stdin.on('end', function () {
         },
         (callback) => {
             services = createServices(serviceUrls)
-            fims.getServices(callback)
+            core.getServices(callback)
         },
         (retrievedServices, callback) => {
             return async.each(retrievedServices, (retrievedService, callback) => {
@@ -203,10 +208,10 @@ process.stdin.on('end', function () {
                     service.id = retrievedService.id;
 
                     console.log("Updating Service '" + service.label + "'");
-                    fims.httpPut(service.id, service, callback);
+                    core.httpPut(service.id, service, callback);
                 } else {
                     console.log("Removing " + (service.id ? "duplicate " : "") + "Service '" + retrievedService.label + "'");
-                    fims.httpDelete(retrievedService.id, callback);
+                    core.httpDelete(retrievedService.id, callback);
                 }
             }, callback);
         },
@@ -217,7 +222,7 @@ process.stdin.on('end', function () {
                 }
 
                 console.log("Inserting Service '" + service.label + "'");
-                return fims.httpPost(servicesUrl, service, (err, postedService) => {
+                return core.httpPost(servicesUrl, service, (err, postedService) => {
                     service.id = postedService.id;
                     callback();
                 });

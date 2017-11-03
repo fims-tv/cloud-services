@@ -1,0 +1,13 @@
+task build {}
+
+build.dependsOn("copy-essence-to-private-bucket:build")
+build.dependsOn("create-ame-job:build")
+build.dependsOn("create-asset-in-media-repo:build")
+build.dependsOn("create-asset-in-semantic-repo:build")
+build.dependsOn("create-transform-job-create-proxy:build")
+build.dependsOn("create-transform-job-extract-thumbnail:build")
+build.dependsOn("remove-essence-from-public-bucket:build")
+build.dependsOn("send-callback-to-wf-activity:build")
+build.dependsOn("trigger-workflow-from-lambda:build")
+build.dependsOn("update-asset-in-media-repo:build")
+build.dependsOn("validate-metadata:build")

@@ -112,11 +112,11 @@ resource "aws_iam_role_policy_attachment" "role-policy-S3" {
 #################################
 
 resource "aws_lambda_function" "triggerWorkflowFromLambda" {
-  filename         = "./../workflow/trigger-workfow-from-lambda/build/trigger-workflow-from-lambda-package.zip"
+  filename         = "./../workflow/trigger-workflow-from-lambda/build/trigger-workflow-from-lambda-package.zip"
   function_name    = "${var.triggerWorkflowLambdaFunctionName}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.triggerWorkflowLambdaModuleName}.handler"
-  source_code_hash = "${base64sha256(file("./../workflow/trigger-workfow-from-lambda/build/trigger-workflow-from-lambda-package.zip"))}"
+  source_code_hash = "${base64sha256(file("./../workflow/trigger-workflow-from-lambda/build/trigger-workflow-from-lambda-package.zip"))}"
   runtime          = "nodejs4.3"
   timeout          = "15"
   memory_size      = "128"
@@ -197,7 +197,8 @@ resource "aws_lambda_function" "createAmeJob" {
   environment {
     variables = {
       SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
-      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/ame-service-output"
+      JOB_OUTPUT_BUCKET        = "${var.repo-bucket}"
+      JOB_OUTPUT_KEY_PREFIX    = "ame-service-output/"
       JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
       JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
       JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
@@ -243,7 +244,8 @@ resource "aws_lambda_function" "createTransformJobExtractThumbnail" {
   environment {
     variables = {
       SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
-      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_OUTPUT_BUCKET        = "${var.repo-bucket}"
+      JOB_OUTPUT_KEY_PREFIX    = "transform-service-output/"
       JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
       JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
       JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
@@ -268,7 +270,8 @@ resource "aws_lambda_function" "createTransformJobCreateProxy" {
   environment {
     variables = {
       SERVICE_REGISTRY_URL     = "${var.serviceRegistryUrl}"
-      JOB_OUTPUT_LOCATION      = "https://s3.amazonaws.com/${var.repo-bucket}/transform-service-output"
+      JOB_OUTPUT_BUCKET        = "${var.repo-bucket}"
+      JOB_OUTPUT_KEY_PREFIX    = "transform-service-output/"
       JOB_SUCCESS_URL          = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/success?tasktoken="
       JOB_FAILED_URL           = "${aws_api_gateway_deployment.job_activity_completion_deployment.invoke_url}/fail?tasktoken="
       JOB_PROCESS_ACTIVITY_ARN = "${aws_sfn_activity.job_completion_activity.id}"
@@ -297,7 +300,6 @@ resource "aws_lambda_function" "updateAssetInMediaRepo" {
   }
 }
 
-
 ###########################################################
 #  Lambda : Step 9 Create Asset in Semantic Repo
 ###########################################################
@@ -318,7 +320,6 @@ resource "aws_lambda_function" "createAssetInSemanticRepo" {
     }
   }
 }
-
 
 #################################
 #  aws_iam_role : IAM role for state machine executions

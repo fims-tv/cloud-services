@@ -1,31 +1,31 @@
 {
-  "name": "media-repository",
-  "version": "0.0.1",
-  "description": "FIMS 2.0 Media Repository for AWS",
-  "author": "Joost Rovers <joost.rovers@glookast.com>",
-  "engines": {
-    "node": "~4.3.2"
-  },
-  "scripts": {
-    "test": "node node_modules/jasmine/bin/jasmine.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
-  },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "async": "^2.5.0",
-    "uuid": "^3.1.0",
-    "fims-aws": "^0.0.7"
-  },
-  "bugs": {
-    "url": "https://github.com/fims-tv/aws-services/issues"
-  },
-  "homepage": "https://github.com/fims-tv/aws-services#readme",
-  "devDependencies": {
-    "archiver": "^2.0.3",
-    "jasmine": "^2.6.0",
-    "request": "^2.81.0"
-  }
+    "name": "media-repository",
+    "version": "0.0.1",
+    "description": "FIMS 2.0 Media Repository for AWS",
+    "author": "Joost Rovers <joost.rovers@glookast.com>",
+    "engines": {
+        "node": "~4.3.2"
+    },
+    "scripts": {
+        "test": "node node_modules/jasmine/bin/jasmine.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
+    },
+    "license": "Apache-2.0",
+    "dependencies": {
+        "async": "^2.5.0",
+        "uuid": "^3.1.0",
+        "fims-aws": "0.0.8"
+    },
+    "bugs": {
+        "url": "https://github.com/fims-tv/aws-services/issues"
+    },
+    "homepage": "https://github.com/fims-tv/aws-services#readme",
+    "devDependencies": {
+        "archiver": "^2.1.0",
+        "jasmine": "^2.8.0",
+        "request": "^2.83.0"
+    }
 }

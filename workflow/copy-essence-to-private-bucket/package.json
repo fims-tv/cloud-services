@@ -4,28 +4,25 @@
     "description": "FIMS 2.0 Service Registry for AWS",
     "author": "Loic Barbou <loic@triskel-inc.com>",
     "engines": {
-      "node": "~4.3.2"
+        "node": "~4.3.2"
     },
-    "scripts": {
-      
-    },
+    "scripts": {},
     "repository": {
-      "type": "git",
-      "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
+        "type": "git",
+        "url": "git+ssh://git@github.com/fims-tv/aws-services.git"
     },
     "license": "Apache-2.0",
     "dependencies": {
-      "fims-aws": "^0.0.4",
-      "underscore": "^1.8.3",
-      "aws-sdk": "^2.110.0",
-      "util": "^0.10.3"
+        "async": "^2.5.0",
+        "aws-sdk": "^2.144.0",
+        "fims-core": "^0.0.8"
     },
     "bugs": {
-      "url": "https://github.com/fims-tv/aws-services/issues"
+        "url": "https://github.com/fims-tv/aws-services/issues"
     },
     "homepage": "https://github.com/fims-tv/aws-services#readme",
     "devDependencies": {
-      "archiver": "^2.0.3",
-      "async": "^2.5.0"
+        "archiver": "^2.1.0",
+        "async": "^2.5.0"
     }
-  }
+}

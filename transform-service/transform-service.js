@@ -45,7 +45,7 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
             switch (resource.type) {
                 case "JobAssignment":
                     var params = {
-                        FunctionName: event.stageVariables.WorkerLambdaFunctionName,
+                        FunctionName: event.variables.WorkerLambdaFunctionName,
                         InvocationType: "Event",
                         LogType: "None",
                         Payload: JSON.stringify({ "event": event, "jobAssignment": resource })

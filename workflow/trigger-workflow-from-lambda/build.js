@@ -52,9 +52,9 @@ function buildLambda(callback) {
     console.log();
     console.log("=== BuildLambda ===");
     async.waterfall([
-        
+
         createRestApiLambdaPackage
-     
+
     ], callback);
 }
 

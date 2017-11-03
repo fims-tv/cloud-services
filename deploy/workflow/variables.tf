@@ -110,7 +110,6 @@ variable "createAssetInSemanticRepoModuleName" {
   default = "create-asset-in-semantic-repo"
 }
 
-
 # Call back for workflow activity
 
 variable "lambdaWorkflowActivityExecutionRoleName" {

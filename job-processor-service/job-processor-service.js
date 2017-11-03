@@ -51,7 +51,7 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                 (callback) => { // retrieve the related job
                     return FIMS.DAL.get(event, jobProcess.job, (err, retrievedJob) => {
                         if (err) {
-                            jobProcess.jobProcessStatus = "FAILED";
+                            jobProcess.jobProcessStatus = "Failed";
                             jobProcess.jobProcessStatusReason = "Unable to retrieve job '" + jobProcess.job + "'";
                         } else {
                             job = retrievedJob;
@@ -63,20 +63,20 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                 (callback) => { // check if job is valid
                     return FIMS.CORE.isValidJob(job, (err) => {
                         if (err) {
-                            jobProcess.jobProcessStatus = "FAILED";
+                            jobProcess.jobProcessStatus = "Failed";
                             jobProcess.jobProcessStatusReason = err;
-                            job.jobStatus = "FAILED";
+                            job.jobStatus = "Failed";
                             job.jobStatusReason = err;
                         }
                         return callback(err);
                     });
                 },
                 (callback) => { // find services that are able to process job
-                    return FIMS.DAL.get(event, event.stageVariables.ServiceRegistryUrl + "/Service", (err, services) => {
+                    return FIMS.DAL.get(event, event.variables.ServiceRegistryUrl + "/Service", (err, services) => {
                         if (err) {
-                            jobProcess.jobProcessStatus = "FAILED";
+                            jobProcess.jobProcessStatus = "Failed";
                             jobProcess.jobProcessStatusReason = "Failed to retrieve services from service registry";
-                            job.jobStatus = "FAILED";
+                            job.jobStatus = "Failed";
                             job.jobStatusReason = "Error in while processing job";
                             return callback(err);
                         }
@@ -90,9 +90,9 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                             });
                         }, () => {
                             if (acceptingServices.length === 0) {
-                                jobProcess.jobProcessStatus = "FAILED";
+                                jobProcess.jobProcessStatus = "Failed";
                                 jobProcess.jobProcessStatusReason = "No accepting service available";
-                                job.jobStatus = "FAILED";
+                                job.jobStatus = "Failed";
                                 job.jobStatusReason = "No accepting service available";
                                 return callback(jobProcess.jobProcessStatusReason);
                             }
@@ -114,7 +114,7 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
 
                             hasResources.forEach(hasResource => {
                                 if (hasResource.resourceType === "fims:JobAssignment") {
-                                    resourceUrl = hasResource.url;
+                                    resourceUrl = hasResource.httpEndpoint;
                                 }
                             });
 
@@ -125,18 +125,18 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                     }
 
                     if (!resourceUrl) {
-                        jobProcess.jobProcessStatus = "FAILED";
+                        jobProcess.jobProcessStatus = "Failed";
                         jobProcess.jobProcessStatusReason = "No accepting service available";
-                        job.jobStatus = "FAILED";
+                        job.jobStatus = "Failed";
                         job.jobStatusReason = "No accepting service available";
                         return callback(jobProcess.jobProcessStatusReason);
                     }
 
                     return FIMS.DAL.post(event, resourceUrl, jobAssignment, (err, updatedJobAssignment) => {
                         if (err) {
-                            jobProcess.jobProcessStatus = "FAILED";
+                            jobProcess.jobProcessStatus = "Failed";
                             jobProcess.jobProcessStatusReason = "Service '" + acceptingService.label + "' failed to accept JobAssignment";
-                            job.jobStatus = "FAILED";
+                            job.jobStatus = "Failed";
                             job.jobStatusReason = "Error in while processing job";
                             return callback(jobProcess.jobProcessStatusReason);
                         }
@@ -144,8 +144,8 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                         jobAssignment = updatedJobAssignment;
                         jobProcess.jobAssignment = jobAssignment.id;
 
-                        job.jobStatus = "RUNNING";
-                        jobProcess.jobProcessStatus = "RUNNING";
+                        job.jobStatus = "Running";
+                        jobProcess.jobProcessStatus = "Running";
                         callback();
                     });
                 },
@@ -157,11 +157,16 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
                             return FIMS.DAL.put(event, job.id, job, (err, updatedJob) => {
                                 if (err) {
                                     console.log("error updating job '" + job.id + "' due to error: " + err)
-                                    if (jobProcess.jobProcessStatus !== "FAILED") {
-                                        jobProcess.jobProcessStatus = "FAILED";
+                                    if (jobProcess.jobProcessStatus !== "Failed") {
+                                        jobProcess.jobProcessStatus = "Failed";
                                         jobProcess.jobProcessStatusReason = "Unable to update job '" + job.id + "'";
                                     }
                                 }
+
+                                if (jobProcess.jobProcessStatus === "Failed" && job.asyncEndpoint && job.asyncEndpoint.asyncFailure) {
+                                    return FIMS.DAL.get(event, job.asyncEndpoint.asyncFailure, () => callback());
+                                }
+
                                 return callback();
                             });
                         } else {
@@ -188,10 +193,10 @@ FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
             },
             (jobProcess, callback) => {
                 switch (jobProcess.jobProcessStatus) {
-                    case "RUNNING":
+                    case "Running":
                         switch (resource.jobProcessStatus) {
-                            case "COMPLETED":
-                            case "FAILED":
+                            case "Completed":
+                            case "Failed":
                                 jobProcess.jobProcessStatus = resource.jobProcessStatus;
                                 return callback(null, jobProcess);
                         }
@@ -214,10 +219,11 @@ FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
 
                 return FIMS.DAL.put(event, job.id, job, (err, updatedJob) => callback(err, jobProcess, jobAssignment, job));
             },
+            // Disabled deleting of jobAssignment for easy inspection
+            // (jobProcess, jobAssignment, job, callback) => {
+            //     return FIMS.DAL.del(event, jobAssignment.id, (err, jobAssignment) => callback(err, jobProcess, jobAssignment, job));
+            // },
             (jobProcess, jobAssignment, job, callback) => {
-                return FIMS.DAL.del(event, jobAssignment.id, (err, jobAssignment) => callback(err, jobProcess, job));
-            },
-            (jobProcess, job, callback) => {
                 jobProcess.jobAssignment = null;
                 return originalBL.put(event, resourceDescriptor, jobProcess, (err, jobProcess) => callback(err, jobProcess, job));
             }
@@ -226,10 +232,10 @@ FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
                 var url;
 
                 switch (job.jobStatus) {
-                    case "COMPLETED":
+                    case "Completed":
                         url = job.asyncEndpoint.asyncSuccess;
                         break;
-                    case "FAILED":
+                    case "Failed":
                         url = job.asyncEndpoint.asyncFailure;
                         break;
                 }

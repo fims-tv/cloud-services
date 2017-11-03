@@ -1,0 +1,14 @@
+task build(type: Exec) {
+    inputs.file("build.js");
+    inputs.file("copy-essence-to-private-bucket.js");
+    inputs.dir("node_modules");
+    outputs.dir("build");
+    commandLine "cmd", "/c", "node"
+    args "build.js"
+}
+
+build.dependsOn(npmUpdate)
+
+task clean(type: Delete) {
+    delete "build"
+}

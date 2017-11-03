@@ -46,7 +46,7 @@ function createRestApiLambdaPackage(callback) {
     archive.file("media-repository.js");
     archive.directory("node_modules/async/");
     archive.directory("node_modules/fims-aws/");
-    archive.directory("node_modules/request/"); 
+    archive.directory("node_modules/request/");
     archive.directory("node_modules/uuid/");
     archive.finalize();
 }
@@ -58,9 +58,9 @@ function buildLambda(callback) {
     console.log();
     console.log("=== BuildLambda ===");
     async.waterfall([
-        
+
         createRestApiLambdaPackage
-     
+
     ], callback);
 }
 

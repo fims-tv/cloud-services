@@ -34,6 +34,9 @@ FIMS.BL.get = (event, resourceDescriptor, callback) => {
 FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
     switch (resource.type) {
         case "AmeJob":
+        case "CaptureJob":
+        case "QAJob":
+        case "TransferJob":
         case "TransformJob":
             return originalBL.post(event, resourceDescriptor, resource, callback);
         default:
@@ -44,6 +47,9 @@ FIMS.BL.post = (event, resourceDescriptor, resource, callback) => {
 FIMS.BL.put = (event, resourceDescriptor, resource, callback) => {
     switch (resource.type) {
         case "AmeJob":
+        case "CaptureJob":
+        case "QAJob":
+        case "TransferJob":
         case "TransformJob":
             return originalBL.put(event, resourceDescriptor, resource, callback);
         default:

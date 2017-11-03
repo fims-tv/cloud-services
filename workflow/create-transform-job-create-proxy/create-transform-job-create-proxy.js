@@ -1,18 +1,19 @@
 var AWS = require('aws-sdk');
 var stepfunctions = new AWS.StepFunctions();
 
-var fims = require("fims-core");
+var core = require("fims-core");
 var async = require("async");
 
 const SERVICE_REGISTRY_URL = process.env.SERVICE_REGISTRY_URL;
-const JOB_OUTPUT_LOCATION = process.env.JOB_OUTPUT_LOCATION;
+const JOB_OUTPUT_BUCKET = process.env.JOB_OUTPUT_BUCKET;
+const JOB_OUTPUT_KEY_PREFIX = process.env.JOB_OUTPUT_KEY_PREFIX;
 const JOB_SUCCESS_URL = process.env.JOB_SUCCESS_URL;
 const JOB_FAILED_URL = process.env.JOB_FAILED_URL;
 const JOB_PROCESS_ACTIVITY_ARN = process.env.JOB_PROCESS_ACTIVITY_ARN;
 
 const jobProfileLabel = "CreateProxy";
 
-fims.setServiceRegistryServicesURL(SERVICE_REGISTRY_URL + "/Service");
+core.setServiceRegistryServicesURL(SERVICE_REGISTRY_URL + "/Service");
 
 exports.handler = (event, context, callback) => {
     console.log("Event:");
@@ -45,7 +46,7 @@ exports.handler = (event, context, callback) => {
             });
         },
         (taskToken, callback) => { // retrieving jobProfile(s) by label
-            return fims.getJobProfilesByLabel("fims:TransformJob", jobProfileLabel, (err, jobProfiles) => callback(err, taskToken, jobProfiles));
+            return core.getJobProfilesByLabel("fims:TransformJob", jobProfileLabel, (err, jobProfiles) => callback(err, taskToken, jobProfiles));
         },
         (taskToken, jobProfiles, callback) => { // checking if we have the job profile we want
             var jobProfile = jobProfiles.length > 0 ? jobProfiles[0] : null;
@@ -54,31 +55,31 @@ exports.handler = (event, context, callback) => {
                 return callback("JobProfile '" + jobProfileLabel + "' not found");
             }
 
-            var transformJob = new fims.TransformJob(
+            var transformJob = new core.TransformJob(
                 jobProfile.id ? jobProfile.id : jobProfile,
-                JOB_OUTPUT_LOCATION,
-                new fims.JobParameterBag({
-                    "ebucore:hasRelatedResource": {
-                        type: "ebucore:BMEssence",
-                        "ebucore:locator": event.workflow_param.essence_url
-                    }
+                new core.JobParameterBag({
+                    "fims:inputFile": event.workflow_param.essenceLocator,
+                    "fims:outputLocation": new core.Locator({
+                        awsS3Bucket: JOB_OUTPUT_BUCKET,
+                        awsS3Key: JOB_OUTPUT_KEY_PREFIX
+                    })
                 }),
-                new fims.AsyncEndpoint(JOB_SUCCESS_URL + taskToken, JOB_FAILED_URL + taskToken)
+                new core.AsyncEndpoint(JOB_SUCCESS_URL + taskToken, JOB_FAILED_URL + taskToken)
             );
 
             console.log("posting TransformJob");
             console.log(JSON.stringify(transformJob, null, 2));
-            return fims.postResource("fims:TransformJob", transformJob, callback);
+            return core.postResource("fims:TransformJob", transformJob, callback);
         },
         (transformJob, callback) => {
             event.workflow_param.transformjob_createproxy_id = transformJob.id;
 
-            var jobProcess = new fims.JobProcess(transformJob.id);
+            var jobProcess = new core.JobProcess(transformJob.id);
 
             console.log("posting JobProcess");
             console.log(JSON.stringify(jobProcess, null, 2));
-            
-            return fims.postResource("fims:JobProcess", jobProcess, callback);
+
+            return core.postResource("fims:JobProcess", jobProcess, callback);
         }
     ], (err) => {
         if (err) {

@@ -44,7 +44,7 @@ function createRestApiLambdaPackage(callback) {
     archive.pipe(output);
 
     archive.file("validate-metadata.js");
-    archive.directory("node_modules/util/"); 
+    archive.directory("node_modules/util/");
     archive.directory("node_modules/underscore/");
     archive.finalize();
 }
@@ -54,9 +54,9 @@ function buildLambda(callback) {
     console.log();
     console.log("=== BuildLambda ===");
     async.waterfall([
-        
+
         createRestApiLambdaPackage
-     
+
     ], callback);
 }
 

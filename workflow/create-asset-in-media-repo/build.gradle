@@ -1,0 +1,14 @@
+task build(type: Exec) {
+    inputs.file("build.js");
+    inputs.file("create-asset-in-media-repo.js");
+    inputs.dir("node_modules");
+    outputs.dir("build");
+    commandLine "cmd", "/c", "node"
+    args "build.js"
+}
+
+build.dependsOn(npmUpdate)
+
+task clean(type: Delete) {
+    delete "build"
+}

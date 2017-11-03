@@ -15,15 +15,15 @@ variable "region" {
 }
 
 variable "repotTableName" {
-  default = "fims-transform-service-test1"
+  default = "fims-transform-service-ibc"
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-media-transform-lambda-execution-role-test1"
+  default = "fims-media-transform-lambda-execution-role-ibc"
 }
 
 variable "restApiLambdaFunctionName" {
-  default = "transform-service-test1"
+  default = "transform-service-ibc"
 }
 
 variable "restApiLambdaModuleName" {
@@ -31,7 +31,7 @@ variable "restApiLambdaModuleName" {
 }
 
 variable "workerApiLambdaFunctionName" {
-  default = "fims-transform-worker-test1"
+  default = "fims-transform-worker-ibc"
 }
 
 variable "workerApiLambdaModuleName" {
@@ -39,11 +39,11 @@ variable "workerApiLambdaModuleName" {
 }
 
 variable "restApiName" {
-  default = "fims-transform-rest-api-test1"
+  default = "fims-transform-rest-api-ibc"
 }
 
 variable "restApiStageName" {
-  default = "test1"
+  default = "ibc"
 }
 
 variable "serviceName" {

@@ -34,18 +34,19 @@ function doProcessJob(event, jobAssignment, callback) {
 
     var jobProcess;
     var job;
-    var jobProfile
-    var jobInput;;
-    var bmEssence;
+    var jobProfile;
+    var jobInput;
+    var inputFile;
+    var outputLocation;
     var inputFilename;
     var mediainfoOutput;
     var report;
-    var outputFilename;
+    var outputFile;
 
     async.waterfall([
         function (callback) {
-            console.log("updating jobAssignment status to RUNNING");
-            jobAssignment.jobProcessStatus = "RUNNING";
+            console.log("updating jobAssignment status to Running");
+            jobAssignment.jobProcessStatus = "Running";
             jobAssignment.dateModified = new Date().toISOString();
             FIMS.DAL.put(event, jobAssignment.id, jobAssignment, callback);
         },
@@ -106,27 +107,46 @@ function doProcessJob(event, jobAssignment, callback) {
             console.log(JSON.stringify(resource, null, 2));
             jobInput = resource;
 
-            console.log("Resolving jobInput[\"ebucore:hasRelatedResource\"]");
-            FIMS.DAL.get(event, jobInput["ebucore:hasRelatedResource"], callback);
+
+            console.log("Resolving jobInput[\"fims:outputLocation\"]");
+            FIMS.DAL.get(event, jobInput["fims:outputLocation"], callback);
         },
         function (resource, callback) {
             if (!resource) {
-                return callback("Failed to resolve jobInput[\"ebucore:hasRelatedResource\"]");
-            } else if (resource.type !== "BMEssence") {
-                return callback("jobInput[\"ebucore:hasRelatedResource\"] has unexpected type '" + resource.type + "'");
-            } else if (!resource["ebucore:locator"]) {
-                return callback("jobInput[\"ebucore:hasRelatedResource\"] does not have property 'ebucore:locator'");
+                return callback("Failed to resolve jobInput[\"fims:outputLocation\"]");
+            } else if (resource.type !== "Locator") {
+                return callback("jobInput[\"fims:outputLocation\"] has unexpected type '" + resource.type + "'");
             }
 
+            outputLocation = resource
+
+            console.log("Resolving jobInput[\"fims:inputFile\"]");
+            FIMS.DAL.get(event, jobInput["fims:inputFile"], callback);
+        },
+        function (resource, callback) {
+            if (!resource) {
+                return callback("Failed to resolve jobInput[\"fims:inputFile\"]");
+            } else if (resource.type !== "Locator") {
+                return callback("jobInput[\"fims:inputFile\"] has unexpected type '" + resource.type + "'");
+            }
 
             console.log(JSON.stringify(resource, null, 2));
-            bmEssence = resource;
+            inputFile = resource;
 
-            var locator = bmEssence["ebucore:locator"];
+            var bucket = inputFile.awsS3Bucket;
+            var key = inputFile.awsS3Key;
 
-            var bucket = locator.substring(locator.indexOf("/", 8) + 1);
-            var key = bucket.substring(bucket.indexOf("/") + 1);
-            bucket = bucket.substring(0, bucket.indexOf("/"));
+            if (!bucket || !key) {
+                if (inputFile.httpEndpoint) {
+                    bucket = inputFile.httpEndpoint.substring(inputFile.httpEndpoint.indexOf("/", 8) + 1);
+                    key = bucket.substring(bucket.indexOf("/") + 1);
+                    bucket = bucket.substring(0, bucket.indexOf("/"));
+                }
+            }
+
+            if (!bucket || !key) {
+                return callback("Failed to process inputFile Locator")
+            }
 
             inputFilename = "/tmp/" + key;
 
@@ -176,17 +196,24 @@ function doProcessJob(event, jobAssignment, callback) {
             console.log("Extracting metadata from: ");
             console.log(JSON.stringify(result, null, 2));
 
-            if (!job.outputLocation) {
-                return callback("OutputLocation missing");
+            var fileName = uuid.v4() + ".jsonld"
+
+            var bucket = outputLocation.awsS3Bucket;
+            var key = (outputLocation.awsS3Key || "") + fileName;
+
+            if (!bucket) {
+                if (outputLocation.httpEndpoint) {
+                    var outputFileName = outputLocation.httpEndpoint + "/" + fileName;
+
+                    bucket = outputFilename.substring(outputFilename.indexOf("/", 8) + 1);
+                    key = bucket.substring(bucket.indexOf("/") + 1);
+                    bucket = bucket.substring(0, bucket.indexOf("/"));
+                }
             }
 
-            outputFilename = job.outputLocation + "/" + uuid.v4() + ".jsonld";
+            outputFile = new FIMS.CORE.Locator({ awsS3Bucket: bucket, awsS3Key: key });
 
             var output = generateOutput(result)
-
-            var bucket = outputFilename.substring(outputFilename.indexOf("/", 8) + 1);
-            var key = bucket.substring(bucket.indexOf("/") + 1);
-            bucket = bucket.substring(0, bucket.indexOf("/"));
 
             console.log("Storing file in bucket '" + bucket + "' with key '" + key + "'");
             var params = {
@@ -206,11 +233,11 @@ function doProcessJob(event, jobAssignment, callback) {
         }
 
         if (processError) {
-            jobAssignment.jobProcessStatus = "FAILED";
+            jobAssignment.jobProcessStatus = "Failed";
             jobAssignment.jobProcessStatusReason = processError;
         } else {
-            jobAssignment.jobProcessStatus = "COMPLETED";
-            jobAssignment.jobOutput = new FIMS.CORE.JobParameterBag({ "ebucore:locator": outputFilename });
+            jobAssignment.jobProcessStatus = "Completed";
+            jobAssignment.jobOutput = new FIMS.CORE.JobParameterBag({ "fims:outputFile": outputFile });
         }
 
         jobAssignment.dateModified = new Date().toISOString();
@@ -219,7 +246,7 @@ function doProcessJob(event, jobAssignment, callback) {
         return FIMS.DAL.put(event, jobAssignment.id, jobAssignment, (err) => {
             if (err) {
                 console.log("Failed to update jobAssignment due to: " + err);
-                jobAssignment.jobProcessStatus = "FAILED";
+                jobAssignment.jobProcessStatus = "Failed";
             }
 
             if (jobProcess) {

@@ -44,7 +44,8 @@ function createRestApiLambdaPackage(callback) {
     archive.pipe(output);
 
     archive.file("copy-essence-to-private-bucket.js");
-    archive.directory("node_modules/util/"); 
+    archive.directory("node_modules/async/");
+    archive.directory("node_modules/fims-core/");
     archive.finalize();
 }
 
@@ -53,9 +54,9 @@ function buildLambda(callback) {
     console.log();
     console.log("=== BuildLambda ===");
     async.waterfall([
-        
+
         createRestApiLambdaPackage
-     
+
     ], callback);
 }
 

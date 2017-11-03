@@ -1,7 +1,0 @@
-{
-    "lambdaExecutionRoleName":"fims-transcode-lambda-execution-role",
-    "restApiLambdaFunctionName":"fims-transcode-rest-api",
-    "workerLambdaFunctionName":"fims-transform-worker",
-    "restApiName":"fims-transcode-rest-api",
-    "restApiStageName":"test"
-}
