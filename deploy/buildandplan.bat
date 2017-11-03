@@ -55,7 +55,7 @@ echo #########################
 
 echo #########################
 echo Build trigger lambda for workflow
-cd ..\workflow\trigger-workfow-from-lambda
+cd ..\workflow\trigger-workflow-from-lambda
 call npm update
 node build.js
 cd ..\..\deploy
