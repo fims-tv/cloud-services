@@ -10,6 +10,7 @@ build.dependsOn("workflow:build")
 
 subprojects {
     task npmUpdate(type: Exec) {
+        inputs.file "package.json"
         inputs.property("todaysDate", new Date().clearTime() )
         outputs.upToDateWhen { true }
         commandLine "cmd", "/c", "npm"

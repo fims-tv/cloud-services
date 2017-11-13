@@ -1,6 +1,6 @@
-# aws-services
+# cloud-services
 
-This repository contains an example implementation of the FIMS 2.0.0 framework using cloud services.
+This repository contains an example implementation of the FIMS 2.0 framework using cloud services.
 
 ## Overview
 
@@ -12,17 +12,16 @@ This repository contains an example implementation of the FIMS 2.0.0 framework u
 ## Requirements for running the example
 * Node.js v4.3.2 and NPM 2.14.12 installed and accessible in PATH. Recommended is to use a node version manager, which allows you to quickly switch between node versions (see more info at [nvm-windows](https://github.com/coreybutler/nvm-windows))
 * Terraform and available in PATH. See the [Terraform website](https://www.terraform.io/)
+* Java JRE or JDK 1.7 or higher to run gradlew build script
 * AWS account
 
 ## Setup procedure
 1. Clone this repository to your local harddrive
-2. Navigate to the aws-services/deploy folder.
+2. Navigate to the node-services/deploy folder.
 3. Open the main.tf in a text editor and change the access_key, 'secret_key', 'account_id', 'region' variables for your AWS account. Also change the 'public-ingest-bucket' and 'repo-bucket' into a globally unique name. E.g. use public-ingest.your-domain.com and private-repo.your-domain.com to ensure unique names.
 4. Save the file.
-5. Open command line in aws-service/deploy folder.
-6. Execute `terraform init` (this only needs to be done once).
-7. Execute `buildandplan.bat`
-8. Execute `apply.bat`
+5. Open command line in node-services folder.
+6. Execute `gradlew deploy`.
 9. If no errors have occured until now you have successfully setup the infrastructure in your aws cloud. Go to https://aws.amazon.com/console/ and sign in to see your cloud infrastructure.
 
 ## Testing the workflow
