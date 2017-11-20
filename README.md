@@ -14,7 +14,6 @@ This repository contains an example implementation of the FIMS 2.0 framework usi
 * Terraform and available in PATH. See the [Terraform website](https://www.terraform.io/)
 * Java JRE or JDK 1.7 or higher to run gradlew build script
 * AWS account
-* An empty (non-conflicting) AWS environment for the zone you are deploying.
 
 ## Setup procedure
 1. Clone this repository to your local harddrive
