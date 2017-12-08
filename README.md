@@ -20,7 +20,7 @@ This repository contains an example implementation of the FIMS 2.0 framework usi
 2. Navigate to the node-services/deploy folder.
 3. Open the main.tf in a text editor and change the access_key, 'secret_key', 'account_id', 'region' variables for your AWS account. Also change the 'public-ingest-bucket' and 'repo-bucket' into a globally unique name. E.g. use public-ingest.your-domain.com and private-repo.your-domain.com to ensure unique names.
 4. Save the file.
-5. Open command line in node-services folder.
+5. Open command line in cloud-services folder.
 6. Execute `gradlew deploy`.
 9. If no errors have occured until now you have successfully setup the infrastructure in your aws cloud. Go to https://aws.amazon.com/console/ and sign in to see your cloud infrastructure.
 
