@@ -1,0 +1,24 @@
+{
+    "name": "search-service",
+    "version": "0.0.1",
+    "description": "FIMS 2.0 Search Service for AWS",
+    "author": "Loic Barbou <Loic@Triskel-inc.com>",
+    "dependencies": {
+      "aws-sdk": "^2.1.40",
+      "elasticsearch": "^13.2.0",
+      "http-aws-es": "^4.0.0",
+      "moment": "^2.10.6",
+      "underscore": "^1.8.3",
+      "when": "^3.7.4"
+    },
+    "devDependencies": {
+        "archiver": "^2.1.0",
+        "aws-sdk": "^2.144.0",
+        "async": "^2.5.0",
+        "jasmine": "^2.8.0",
+        "request": "^2.83.0",
+        "uuid": "^3.1.0"
+    },
+    "bundledDependencies": []
+  }
+  

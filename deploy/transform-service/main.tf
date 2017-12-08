@@ -138,6 +138,10 @@ resource "aws_dynamodb_table" "repo_service_table" {
     version   = "V1.0"
     author    = "Adam Scarborough"
   }
+
+  stream_enabled = true
+  stream_view_type = "NEW_IMAGE"
+
 }
 
 ##############################
@@ -206,4 +210,12 @@ output "rest_service_url" {
 
 output "lambda_arn" {
   value = "${aws_lambda_function.api_transform_service_lambda.arn}"
+}
+
+output "dynamodb_stream_arn" {
+  value = "${aws_dynamodb_table.repo_service_table.stream_arn}"
+}
+
+output "dynamodb_table_name" {
+  value = "${aws_dynamodb_table.repo_service_table.name}"
 }

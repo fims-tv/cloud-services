@@ -141,6 +141,16 @@ node build.js
 cd ..\..\deploy
 echo #########################
 
+
+echo #########################
+echo Create Elastic search resource and hook to DynamoDB
+cd ..\repo-search
+call npm update
+node build.js
+cd ..\..\deploy
+echo #########################
+
+
 echo #########################
 echo Execute Terraform Plan
 echo #########################

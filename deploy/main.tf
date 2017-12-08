@@ -3,31 +3,37 @@
 ##########################
 
 variable access_key {
-  default = "type your access key"
+  default = "ACCESS KEY"
 }
 
 variable secret_key {
-  default = "type your secret key"
+  default = "SECRET KEY"
 }
 
 variable account_id {
-  default = "type your aws account id - you can find it in the account info in AWS console"
+  default = "ACCOUNT ID"
 }
 
 variable region {
-  default = "us-east-1"
+  default = "REGION"
 }
+
+
 
 #########################
 # Workflow Variables
 #########################
 
 variable "public-ingest-bucket" {
-  default = "public-ingest.ibc.fims.tv"
+  default = "public-ingest.bloommberg.dev.fims.tv"
 }
 
 variable "repo-bucket" {
-  default = "private-repo.ibc.fims.tv"
+  default = "private-repo.bloomberg.dev.fims.tv"
+}
+
+variable "serviceName" {
+  default = "fims-ibc"
 }
 
 #########################
@@ -105,6 +111,137 @@ module "workflow" {
   serviceRegistryUrl = "${module.service-registry.rest_service_url}"
 }
 
+
+#######################
+# Search services
+#######################
+
+module "repo-search" {
+  source = "./repo-search"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  dynamoDBStreamArn = "${module.media-repository.dynamodb_stream_arn}"
+
+}
+
+module "es-dyna-mediarepo" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.media-repository.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.media-repository.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.media-repository.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+
+}
+
+module "es-dyna-jobrepo" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.job-repository.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.job-repository.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.job-repository.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
+
+module "es-dyna-job-processor" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.job-processor-service.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.job-processor-service.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.job-processor-service.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
+
+
+module "es-dyna-job-ame" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.ame-service.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.ame-service.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.ame-service.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
+module "es-dyna-service-registry" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.service-registry.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.service-registry.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.service-registry.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
+module "es-dyna-transform-service" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.transform-service.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.transform-service.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  serviceName= "${var.serviceName}"
+  dynamoDBStreamArn= "${module.transform-service.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
+
+
 #########################
 # Output variables
 #########################
@@ -147,4 +284,20 @@ output "transformServiceUrl" {
 
 output "mediaRepositoryUrl" {
   value = "${module.media-repository.rest_service_url}"
+}
+
+
+output "es_domain_id" {
+  description = "Unique identifier for the ES domain"
+  value       = "${module.repo-search.es_domain_id}" 
+}
+
+output "es_endpoint" {
+  description = "Domain-specific endpoint used to submit index, search, and data upload requests"
+  value       = "${module.repo-search.es_endpoint}" 
+}
+
+output "kibana_endpoint" {
+  description = "Domain-specific endpoint hosting the kibana portal"
+  value       = "${module.repo-search.kibana_endpoint}" 
 }

@@ -7,6 +7,7 @@ build.dependsOn("media-repository:build")
 build.dependsOn("service-registry:build")
 build.dependsOn("transform-service:build")
 build.dependsOn("workflow:build")
+build.dependsOn("repo-search:build")
 
 subprojects {
     task npmUpdate(type: Exec) {
