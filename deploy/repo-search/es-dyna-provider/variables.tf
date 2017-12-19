@@ -13,8 +13,6 @@ variable "triggerLambdaModuleName" {
   default = "dynamo-to-elasticsearch"
 }
 
-variable "serviceName" {}
-
 variable "dynamoDBStreamArn" {}
 
 variable "esEndpoint" {}

@@ -18,7 +18,14 @@ This repository contains an example implementation of the FIMS 2.0 framework usi
 ## Setup procedure
 1. Clone this repository to your local harddrive
 2. Navigate to the node-services/deploy folder.
-3. Open the main.tf in a text editor and change the access_key, 'secret_key', 'account_id', 'region' variables for your AWS account. Also change the 'public-ingest-bucket' and 'repo-bucket' into a globally unique name. E.g. use public-ingest.your-domain.com and private-repo.your-domain.com to ensure unique names.
+3. Create file named terraform.tfvars
+4. Add the following informaton to the created file and update the parameter values reflecting your AWS account 
+     region = "us-east-2"
+     access_key = "AWS Access KEY"
+     secret_key  = "AWS Secret Key"
+     account_id = "AWS Account ID"
+5. Open the main.tf in a text editor and change the 'public-ingest-bucket' and 'repo-bucket' into a globally unique name. E.g. use public-ingest.your-domain.com and private-repo.your-domain.com to ensure unique names.
+6. Update the 'environmentName' and 'environmentType' variables to meaningful values.  
 4. Save the file.
 5. Open command line in cloud-services folder.
 6. Execute `gradlew deploy`.

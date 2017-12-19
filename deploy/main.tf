@@ -1,6 +1,15 @@
-##########################
-# Global Variables
-##########################
+#########################################################
+# AWS Variables
+#
+# Create a file named terraform.tfvars in same directory
+# add these parameters to the file
+#
+# region = "us-east-X"
+# access_key = "my aws access key"
+# secret_key  = "my aws secret key"
+# account_id = "my AWS account id (get it from AWS console under account info)"
+#
+#########################################################
 
 variable access_key {
   default = "ACCESS KEY"
@@ -21,7 +30,7 @@ variable region {
 
 
 #########################
-# Workflow Variables
+# Environment Variables
 #########################
 
 variable "public-ingest-bucket" {
@@ -32,8 +41,13 @@ variable "repo-bucket" {
   default = "private-repo.bloomberg.dev.fims.tv"
 }
 
-variable "serviceName" {
+
+variable "environmentName" {
   default = "fims-ibc"
+}
+
+variable "environmentType" {
+  default = "dev"
 }
 
 #########################
@@ -48,6 +62,11 @@ module "service-registry" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "service-registry"
+
 }
 
 module "job-repository" {
@@ -57,6 +76,10 @@ module "job-repository" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "job-repo"
 }
 
 module "job-processor-service" {
@@ -66,6 +89,10 @@ module "job-processor-service" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "job-processor-service"
 
   serviceRegistryUrl = "${module.service-registry.rest_service_url}"
 }
@@ -77,6 +104,10 @@ module "ame-service" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "ame-service" 
 }
 
 module "transform-service" {
@@ -86,6 +117,11 @@ module "transform-service" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "transform-service"
+
 }
 
 module "media-repository" {
@@ -95,6 +131,11 @@ module "media-repository" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "media-repo"
+
 }
 
 module "workflow" {
@@ -104,6 +145,11 @@ module "workflow" {
   secret_key = "${var.secret_key}"
   account_id = "${var.account_id}"
   region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "ingest_wf"
+
 
   public-ingest-bucket = "${var.public-ingest-bucket}"
   repo-bucket          = "${var.repo-bucket}"
@@ -139,7 +185,6 @@ module "es-dyna-mediarepo" {
   sourceTableName = "${module.media-repository.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.media-repository.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.media-repository.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"
@@ -158,7 +203,6 @@ module "es-dyna-jobrepo" {
   sourceTableName = "${module.job-repository.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.job-repository.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.job-repository.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"
@@ -177,7 +221,6 @@ module "es-dyna-job-processor" {
   sourceTableName = "${module.job-processor-service.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.job-processor-service.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.job-processor-service.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"
@@ -197,7 +240,6 @@ module "es-dyna-job-ame" {
   sourceTableName = "${module.ame-service.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.ame-service.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.ame-service.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"
@@ -215,7 +257,6 @@ module "es-dyna-service-registry" {
   sourceTableName = "${module.service-registry.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.service-registry.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.service-registry.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"
@@ -233,7 +274,6 @@ module "es-dyna-transform-service" {
   sourceTableName = "${module.transform-service.dynamodb_table_name}"
   triggerLambdaFunctionName= "dyna-to-es-${module.transform-service.dynamodb_table_name}"
   triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
-  serviceName= "${var.serviceName}"
   dynamoDBStreamArn= "${module.transform-service.dynamodb_stream_arn}"
   esEndpoint= "${module.repo-search.es_endpoint}"
   esDomainid= "${module.repo-search.es_domain_id}"

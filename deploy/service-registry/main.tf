@@ -4,12 +4,18 @@ provider "aws" {
   region     = "${var.region}"
 }
 
+
+locals {
+  env_composite_name = "${var.serviceName}-${var.environmentName}-${var.environmentType}"
+}
+
+
 #################################
 #  aws_iam_role : iam_for_exec_lambda
 #################################
 
 resource "aws_iam_role" "iam_for_exec_lambda" {
-  name = "${var.lambdaExecutionRoleName}"
+  name = "role_exec_lambda_${local.env_composite_name}"
 
   assume_role_policy = <<EOF
 {
@@ -30,7 +36,7 @@ EOF
 }
 
 resource "aws_iam_policy" "log_policy" {
-  name        = "log_${var.serviceName}_policy"
+  name        = "log_policy_${local.env_composite_name}"
   description = "Policy to write to log"
 
   policy = <<EOF
@@ -55,7 +61,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-log" {
 }
 
 resource "aws_iam_policy" "DynamoDB_policy" {
-  name        = "dynamodb_${var.serviceName}_policy"
+  name        = "dynamodb_policy_${local.env_composite_name}"
   description = "Policy to Access DynamoDB"
 
   policy = <<EOF
@@ -83,7 +89,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-DynamoDB" {
 
 resource "aws_lambda_function" "service-registry_lambda" {
   filename         = "./../service-registry/build/rest-api-lambda-package.zip"
-  function_name    = "${var.restApiLambdaFunctionName}"
+  function_name    = "${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.restApiLambdaModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../service-registry/build/rest-api-lambda-package.zip"))}"
@@ -97,7 +103,7 @@ resource "aws_lambda_function" "service-registry_lambda" {
 ##################################
 
 resource "aws_dynamodb_table" "repo_service_table" {
-  name           = "${var.repotTableName}"
+  name           = "${local.env_composite_name}"
   read_capacity  = 1
   write_capacity = 1
   hash_key       = "resource_type"
@@ -128,7 +134,7 @@ resource "aws_dynamodb_table" "repo_service_table" {
 #  API Gateway
 ##############################
 resource "aws_api_gateway_rest_api" "service_registry_api" {
-  name        = "${var.restApiName}"
+  name        = "${local.env_composite_name}"
   description = "Service Registry Rest Api"
 }
 
@@ -171,11 +177,11 @@ resource "aws_api_gateway_deployment" "service_registry_deployment" {
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.service_registry_api.id}"
-  stage_name  = "${var.restApiStageName}"
+  stage_name  = "${var.environmentType}"
 
   variables = {
-    "TableName" = "${var.repotTableName}"
-    "PublicUrl" = "https://${aws_api_gateway_rest_api.service_registry_api.id}.execute-api.${var.region}.amazonaws.com/${var.restApiStageName}"
+    "TableName" = "${local.env_composite_name}"
+    "PublicUrl" = "https://${aws_api_gateway_rest_api.service_registry_api.id}.execute-api.${var.region}.amazonaws.com/${var.environmentType}"
   }
 }
 

@@ -4,12 +4,17 @@ provider "aws" {
   region     = "${var.region}"
 }
 
+
+locals {
+  env_composite_name = "${var.serviceName}-${var.environmentName}-${var.environmentType}"
+}
+
 #################################
 #  aws_iam_role : iam_for_exec_lambda
 #################################
 
 resource "aws_iam_role" "iam_for_exec_lambda" {
-  name = "${var.lambdaExecutionRoleName}"
+name = "role_exec_lambda_worflow_${local.env_composite_name}"
 
   assume_role_policy = <<EOF
 {
@@ -37,7 +42,7 @@ resource "aws_lambda_permission" "allow_bucket" {
 }
 
 resource "aws_iam_policy" "log_policy" {
-  name        = "log_policy"
+   name = "policy_worflow_log_${local.env_composite_name}"
   description = "Policy to write to log"
 
   policy = <<EOF
@@ -62,7 +67,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-log" {
 }
 
 resource "aws_iam_policy" "steps_policy" {
-  name        = "steps_policy"
+  name = "policy_worflow_${local.env_composite_name}"
   description = "Policy to execute Step Function"
 
   policy = <<EOF
@@ -85,7 +90,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-steps" {
 }
 
 resource "aws_iam_policy" "S3_policy" {
-  name        = "S3_policy"
+  name = "policy_s3_${local.env_composite_name}"
   description = "Policy to access S3 bucket objects"
 
   policy = <<EOF
@@ -113,7 +118,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-S3" {
 
 resource "aws_lambda_function" "triggerWorkflowFromLambda" {
   filename         = "./../workflow/trigger-workflow-from-lambda/build/trigger-workflow-from-lambda-package.zip"
-  function_name    = "${var.triggerWorkflowLambdaFunctionName}"
+  function_name    = "workflow_trigger_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.triggerWorkflowLambdaModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/trigger-workflow-from-lambda/build/trigger-workflow-from-lambda-package.zip"))}"
@@ -134,7 +139,7 @@ resource "aws_lambda_function" "triggerWorkflowFromLambda" {
 
 resource "aws_lambda_function" "validateMetadata" {
   filename         = "./../workflow/validate-metadata/build/workflow-validate-metadata-package.zip"
-  function_name    = "${var.validateMetadataFunctionName}"
+  function_name    = "workflow_validate_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.validateMetadataModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/validate-metadata/build/workflow-validate-metadata-package.zip"))}"
@@ -149,7 +154,7 @@ resource "aws_lambda_function" "validateMetadata" {
 
 resource "aws_lambda_function" "copyEssenceToPrivateBucket" {
   filename         = "./../workflow/copy-essence-to-private-bucket/build/workflow-copy-essence-to-private-bucket-package.zip"
-  function_name    = "${var.copyEssenceToPrivateBucketFunctionName}"
+  function_name    = "workflow_copy_essence_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.copyEssenceToPrivateBucketModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/copy-essence-to-private-bucket/build/workflow-copy-essence-to-private-bucket-package.zip"))}"
@@ -171,7 +176,7 @@ resource "aws_lambda_function" "copyEssenceToPrivateBucket" {
 
 resource "aws_lambda_function" "removeEssenceFromPublicBucket" {
   filename         = "./../workflow/remove-essence-from-public-bucket/build/workflow-remove-essence-from-public-bucket-package.zip"
-  function_name    = "${var.removeEssenceFromPublicBucketFunctionName}"
+  function_name    = "workflow_remove_essence_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.removeEssenceFromPublicBucketModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/remove-essence-from-public-bucket/build/workflow-remove-essence-from-public-bucket-package.zip"))}"
@@ -186,7 +191,7 @@ resource "aws_lambda_function" "removeEssenceFromPublicBucket" {
 
 resource "aws_lambda_function" "createAmeJob" {
   filename         = "./../workflow/create-ame-job/build/create-ame-job-package.zip"
-  function_name    = "${var.createAmeJobFunctionName}"
+  function_name    = "workflow_create_ame_job_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.createAmeJobModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/create-ame-job/build/create-ame-job-package.zip"))}"
@@ -212,7 +217,7 @@ resource "aws_lambda_function" "createAmeJob" {
 
 resource "aws_lambda_function" "createAssetInMediaRepo" {
   filename         = "./../workflow/create-asset-in-media-repo/build/create-asset-in-media-repo-package.zip"
-  function_name    = "${var.createAssetInMediaRepoFunctionName}"
+  function_name    = "workflow_create_asset_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.createAssetInMediaRepoModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/create-asset-in-media-repo/build/create-asset-in-media-repo-package.zip"))}"
@@ -233,7 +238,7 @@ resource "aws_lambda_function" "createAssetInMediaRepo" {
 
 resource "aws_lambda_function" "createTransformJobExtractThumbnail" {
   filename         = "./../workflow/create-transform-job-extract-thumbnail/build/create-transform-job-extract-thumbnail-package.zip"
-  function_name    = "${var.createTransformJobExtractThumbnailFunctionName}"
+  function_name    = "workflow_create_transform_job_thumb_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.createTransformJobExtractThumbnailModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/create-transform-job-extract-thumbnail/build/create-transform-job-extract-thumbnail-package.zip"))}"
@@ -259,7 +264,7 @@ resource "aws_lambda_function" "createTransformJobExtractThumbnail" {
 
 resource "aws_lambda_function" "createTransformJobCreateProxy" {
   filename         = "./../workflow/create-transform-job-create-proxy/build/create-transform-job-create-proxy-package.zip"
-  function_name    = "${var.createTransformJobCreateProxyFunctionName}"
+  function_name    = "workflow_create_transform_job_proxy_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.createTransformJobCreateProxyModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/create-transform-job-create-proxy/build/create-transform-job-create-proxy-package.zip"))}"
@@ -285,7 +290,7 @@ resource "aws_lambda_function" "createTransformJobCreateProxy" {
 
 resource "aws_lambda_function" "updateAssetInMediaRepo" {
   filename         = "./../workflow/update-asset-in-media-repo/build/update-asset-in-media-repo-package.zip"
-  function_name    = "${var.updateAssetInMediaRepoFunctionName}"
+  function_name    = "workflow_update_asset_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.updateAssetInMediaRepoModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/update-asset-in-media-repo/build/update-asset-in-media-repo-package.zip"))}"
@@ -306,7 +311,7 @@ resource "aws_lambda_function" "updateAssetInMediaRepo" {
 
 resource "aws_lambda_function" "createAssetInSemanticRepo" {
   filename         = "./../workflow/create-asset-in-semantic-repo/build/create-asset-in-semantic-repo-package.zip"
-  function_name    = "${var.createAssetInSemanticRepoFunctionName}"
+  function_name    = "workflow_create_semantic_asset_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
   handler          = "${var.createAssetInSemanticRepoModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/create-asset-in-semantic-repo/build/create-asset-in-semantic-repo-package.zip"))}"
@@ -326,7 +331,7 @@ resource "aws_lambda_function" "createAssetInSemanticRepo" {
 #################################
 
 resource "aws_iam_role" "iam_for_state_machine_execution" {
-  name = "iam_for_state_machine_execution"
+  name = "role_exec_worflow_${local.env_composite_name}"
 
   assume_role_policy = <<EOF
 {
@@ -346,7 +351,7 @@ EOF
 }
 
 resource "aws_iam_policy" "steps_policy2" {
-  name        = "steps_policy2"
+  name = "policy_exec_worflow_${local.env_composite_name}"
   description = "Policy to execute Step Function"
 
   policy = <<EOF
@@ -375,7 +380,7 @@ resource "aws_iam_role_policy_attachment" "role-policy-steps2" {
 #################################
 
 resource "aws_sfn_state_machine" "stepWorkflow" {
-  name     = "${var.stepWorkflowName}"
+  name     = "${local.env_composite_name}"
   role_arn = "${aws_iam_role.iam_for_state_machine_execution.arn}"
 
   definition = <<EOF
@@ -585,7 +590,7 @@ resource "aws_s3_bucket_notification" "public-ingest-bucket_notification" {
 ##############################
 
 resource "aws_sfn_activity" "job_completion_activity" {
-  name = "${var.jobCompletionActivity}"
+  name = "job_completion_${local.env_composite_name}"
 }
 
 ##############################
@@ -602,7 +607,7 @@ resource "aws_sfn_activity" "job_completion_activity" {
 #################################
 
 resource "aws_iam_role" "iam_for_exec_wf_activity_lambda" {
-  name = "${var.lambdaWorkflowActivityExecutionRoleName}"
+name = "role_exec_lambda_wf_activity_exec_${local.env_composite_name}"
 
   assume_role_policy = <<EOF
 {
@@ -623,7 +628,7 @@ EOF
 }
 
 resource "aws_iam_policy" "log_wf_activity_policy" {
-  name        = "log_wf_activity_policy"
+name = "policy_wf_activity_log_${local.env_composite_name}"
   description = "Policy to write to log"
 
   policy = <<EOF
@@ -658,7 +663,7 @@ resource "aws_iam_role_policy_attachment" "role_wf_activity-policy-steps" {
 
 resource "aws_lambda_function" "send-callback-to-wf-activity_lambda" {
   filename         = "./../workflow/send-callback-to-wf-activity/build/workflow-send-callback-to-wf-package.zip"
-  function_name    = "${var.sendCallbackToWFActivityFunctionName}"
+  function_name    = "send_callback_to_wf_${local.env_composite_name}"
   role             = "${aws_iam_role.iam_for_exec_wf_activity_lambda.arn}"
   handler          = "${var.sendCallbackToWFActivityModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../workflow/send-callback-to-wf-activity/build/workflow-send-callback-to-wf-package.zip"))}"
@@ -671,7 +676,7 @@ resource "aws_lambda_function" "send-callback-to-wf-activity_lambda" {
 #  API Gateway
 ##############################
 resource "aws_api_gateway_rest_api" "job_activity_completion_api" {
-  name        = "${var.jobCompletionRestAPIName}"
+  name        = "send_callback_to_wf_${local.env_composite_name}"
   description = "Service Registry Rest Api"
 }
 
@@ -714,18 +719,8 @@ resource "aws_api_gateway_deployment" "job_activity_completion_deployment" {
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.job_activity_completion_api.id}"
-  stage_name  = "${var.jobCompletionAPIStageName}"
+  stage_name  = "${var.environmentType}"
 }
 
-##################################
-# Output 
-##################################
 
-
-#output "GenerateAndTransformFeedarn" {
-#  value = "${aws_lambda_function.GenerateAndTransformFeed_lambda.arn}"
-#}
-
-
-########################################
 

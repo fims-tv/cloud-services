@@ -4,30 +4,12 @@ variable "account_id" {}
 variable "region" {}
 variable "serviceRegistryUrl" {}
 
-variable "repotTableName" {
-  default = "fims-job-processor-service-ibc"
-}
-
-variable "lambdaExecutionRoleName" {
-  default = "fims-media-job-processor-service-lambda-execution-role-ibc"
-}
-
-variable "restApiLambdaFunctionName" {
-  default = "job-processor-service-ibc"
-}
-
 variable "restApiLambdaModuleName" {
   default = "job-processor-service"
 }
 
-variable "restApiName" {
-  default = "fims-job-processor-service-rest-api-ibc"
-}
+variable "serviceName" {}
 
-variable "restApiStageName" {
-  default = "ibc"
-}
+variable "environmentName" {}
 
-variable "serviceName" {
-  default = "job-processor-service-ibc"
-}
+variable "environmentType" {}
