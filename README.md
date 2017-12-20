@@ -20,11 +20,12 @@ This repository contains an example implementation of the FIMS 2.0 framework usi
 2. Navigate to the node-services/deploy folder.
 3. Create file named terraform.tfvars
 4. Add the following informaton to the created file and update the parameter values reflecting your AWS account 
-
- region = "us-east-2"
- access_key = "AWS Access KEY"
- secret_key  = "AWS Secret Key"
- account_id = "AWS Account ID"
+```
+ 	region = "us-east-2"
+   	access_key = "AWS Access KEY"
+ 	secret_key  = "AWS Secret Key"
+ 	account_id = "AWS Account ID"
+```
 
 5. Open the main.tf in a text editor and change the 'public-ingest-bucket' and 'repo-bucket' into a globally unique name. E.g. use public-ingest.your-domain.com and private-repo.your-domain.com to ensure unique names.
 6. Update the 'environmentName' and 'environmentType' variables to meaningful values.  
