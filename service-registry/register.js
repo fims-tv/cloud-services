@@ -12,6 +12,16 @@ var jobProfiles = {
             new core.JobParameter("fims:outputFile", "fims:Locator")
         ]
     ),
+    ExtractAIMetadata: new core.JobProfile(
+        "ExtractAIMetadata",
+        [
+            new core.JobParameter("fims:inputFile", "fims:Locator"),
+            new core.JobParameter("fims:outputLocation", "fims:Locator")
+        ],
+        [
+            new core.JobParameter("fims:outputFile", "fims:Locator")
+        ]
+    ),
     CreateProxy: new core.JobProfile(
         "CreateProxy",
         [
@@ -67,6 +77,28 @@ function createServices(serviceUrls) {
                     )
                 );
                 break;
+                case "AIServiceUrl":
+                serviceList.push(
+                    new core.Service(
+                        "AI Service",
+                        [
+                            new core.ServiceResource("fims:JobAssignment", serviceUrls[prop] + "/JobAssignment")
+                        ],
+                        "fims:AmeJob",
+                        [
+                            jobProfiles.ExtractAIMetadata.id ? jobProfiles.ExtractAIMetadata.id : jobProfiles.ExtractAIMetadata
+                        ],
+                        [
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
+                        ],
+                        [
+                            new core.Locator({ "httpEndpoint" : serviceUrls.publicBucketUrl, "awsS3Bucket": serviceUrls.publicBucket }),
+                            new core.Locator({ "httpEndpoint" : serviceUrls.privateBucketUrl, "awsS3Bucket": serviceUrls.privateBucket })
+                        ]
+                    )
+                );
+                break;                
             case "jobProcessorServiceUrl":
                 serviceList.push(new core.Service(
                     "Job Processor Service",

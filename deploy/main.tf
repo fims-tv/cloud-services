@@ -34,16 +34,21 @@ variable region {
 #########################
 
 variable "public-ingest-bucket" {
-  default = "public-ingest.bloommberg.dev.fims.tv"
+  default = "public-ingest.bloommberg.us-east-1.dev.fims.tv"
 }
 
 variable "repo-bucket" {
-  default = "private-repo.bloomberg.dev.fims.tv"
+  default = "private-repo.bloomberg.us-east-1.dev.fims.tv"
+}
+
+
+variable "public-ai-ingest-bucket" {
+  default = "public-ai-ingest.bloommberg.us-east-1.dev.fims.tv"
 }
 
 
 variable "environmentName" {
-  default = "fims-ibc"
+  default = "fims-loic-ai"
 }
 
 variable "environmentType" {
@@ -110,6 +115,21 @@ module "ame-service" {
   serviceName = "ame-service" 
 }
 
+
+module "ai-service" {
+  source = "./ai-service"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "ai-service" 
+}
+
+
 module "transform-service" {
   source = "./transform-service"
 
@@ -138,6 +158,11 @@ module "media-repository" {
 
 }
 
+#######################
+# Workflow
+#######################
+
+
 module "workflow" {
   source = "./workflow"
 
@@ -156,6 +181,31 @@ module "workflow" {
 
   serviceRegistryUrl = "${module.service-registry.rest_service_url}"
 }
+
+
+#######################
+# Triggers
+#######################
+
+module "triggers" {
+  source = "./triggers"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  environmentName = "${var.environmentName}"
+  environmentType = "${var.environmentType}"
+  serviceName = "trigger"
+
+
+  public-ingest-bucket = "${var.public-ai-ingest-bucket}"
+  repo-bucket          = "${var.repo-bucket}"
+
+  serviceRegistryUrl = "${module.service-registry.rest_service_url}"
+}
+
 
 
 #######################
@@ -281,6 +331,23 @@ module "es-dyna-transform-service" {
 }
 
 
+module "es-dyna-ai-service" {
+  source = "./repo-search/es-dyna-provider"
+
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  account_id = "${var.account_id}"
+  region     = "${var.region}"
+
+  sourceTableName = "${module.ai-service.dynamodb_table_name}"
+  triggerLambdaFunctionName= "dyna-to-es-${module.ai-service.dynamodb_table_name}"
+  triggerLambdaRoleArn= "${module.repo-search.lambda_role_arn}"
+  dynamoDBStreamArn= "${module.ai-service.dynamodb_stream_arn}"
+  esEndpoint= "${module.repo-search.es_endpoint}"
+  esDomainid= "${module.repo-search.es_domain_id}"
+
+}
+
 
 #########################
 # Output variables
@@ -324,6 +391,10 @@ output "transformServiceUrl" {
 
 output "mediaRepositoryUrl" {
   value = "${module.media-repository.rest_service_url}"
+}
+
+output "AIServiceUrl" { 
+  value = "${module.ai-service.rest_service_url}"
 }
 
 

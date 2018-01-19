@@ -8,7 +8,7 @@ variable "sourceTableName" {
 }
 
 variable "lambdaExecutionRoleName" {
-  default = "fims-dyna-to-es-service-lambda-execution-role-ibc"
+  default = "fims-dyna-to-es-service-lambda-execution-role-loic"
 }
 
 variable "triggerLambdaFunctionName" {
@@ -20,7 +20,7 @@ variable "triggerLambdaModuleName" {
 }
 
 variable "serviceName" {
-  default = "fims-ibc"
+  default = "fims-loic"
 }
 
 variable "dynamoDBStreamArn" {

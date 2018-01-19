@@ -1,0 +1,30 @@
+{
+    "name": "aws-ai-service",
+    "version": "0.0.1",
+    "description": "FIMS 2.0 AI Service for AWS leveraging AWS Rekognotion",
+    "author": "Loic Barbou<Loic@triskel-inc.com>",
+    "engines": {
+        "node": "~4.3.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/fims-tv/aws-ai-service.git"
+    },
+    "license": "Apache-2.0",
+    "dependencies": {
+        "async": "^2.5.0",
+        "fims-aws": "0.0.8",
+        "uuid": "^3.1.0",
+        "xml2js": "^0.4.19"
+    },
+    "bugs": {
+        "url": "https://github.com/fims-tv/aws-ai-service/issues"
+    },
+    "devDependencies": {
+        "archiver": "^2.1.0",
+        "aws-sdk": "^2.144.0",
+        "request": "^2.83.0"
+    },
+    "homepage": "https://github.com/fims-tv/aws-ai-service#readme",
+    "main": "server.js"
+}

@@ -1,0 +1,3 @@
+task build {}
+
+build.dependsOn("trigger_ai_from_s3:build")

@@ -1,12 +1,15 @@
 task build {}
 
 build.dependsOn("ame-service:build")
+build.dependsOn("ai-service:build")
 build.dependsOn("job-processor-service:build")
 build.dependsOn("job-repository:build")
 build.dependsOn("media-repository:build")
 build.dependsOn("service-registry:build")
 build.dependsOn("transform-service:build")
 build.dependsOn("workflow:build")
+build.dependsOn("triggers:build")
+build.dependsOn("repo-search:build")
 build.dependsOn("repo-search:build")
 
 subprojects {

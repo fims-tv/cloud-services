@@ -1,0 +1,17 @@
+task build(type: Exec) {
+    inputs.file("build.js");
+    inputs.file("ai-service.js");
+    inputs.file("lambda-worker.js");
+    inputs.file("lambda-worker-result.js");
+    inputs.dir("node_modules");
+    inputs.dir("externals");
+    outputs.dir("build");
+    commandLine "cmd", "/c", "node"
+    args "build.js"
+}
+
+build.dependsOn(npmUpdate)
+
+task clean(type: Delete) {
+    delete "build"
+}
