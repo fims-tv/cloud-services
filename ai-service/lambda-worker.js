@@ -15,16 +15,19 @@ const crypto = require("crypto");
 
 var REKO_SNS_ROLE_ARN = process.env["REKO_SNS_ROLE_ARN"];
 var SNS_TOPIC_ARN = process.env["SNS_TOPIC_ARN"];
+//var AI_REKO_JOB_TYPE = process.env["AI_REKO_JOB_TYPE"];
 
 exports.handler = (input, context, callback) => {
     var event = input.event;
     var jobAssignment = input.jobAssignment;
+
 
     console.log("Received event:", JSON.stringify(event, null, 2));
     console.log("Received jobAssignment:", JSON.stringify(jobAssignment, null, 2));
     console.log("Environment variable:");
     console.log("REKO_SNS_ROLE_ARN: ", REKO_SNS_ROLE_ARN);
     console.log("SNS_TOPIC_ARN:", SNS_TOPIC_ARN);
+    //console.log("AI_REKO_JOB_TYPE:", AI_REKO_JOB_TYPE);
 
     doProcessJob(event, jobAssignment, callback);
 };
@@ -38,6 +41,7 @@ function doProcessJob(event, jobAssignment, callback) {
     var job;
     var jobProfile;
     var jobInput;
+    var aiJobType;
     var inputFile;
     var outputLocation;
     var inputFilename;
@@ -108,7 +112,7 @@ function doProcessJob(event, jobAssignment, callback) {
 
             console.log(JSON.stringify(resource, null, 2));
             jobInput = resource;
-
+            aiJobType = resource.aiJobType; 
 
             console.log("Resolving jobInput[\"fims:outputLocation\"]");
             FIMS.DAL.get(event, jobInput["fims:outputLocation"], callback);
@@ -169,32 +173,167 @@ function doProcessJob(event, jobAssignment, callback) {
             var base64JobId = new Buffer(jobAssignment.id).toString('hex');
 
             var rekognition = new AWS.Rekognition();
-            var params = {
-                   Video: { /* required */
-                        S3Object: {
-                            Bucket: data.Bucket,
-                            Name: data.Key
-                                }
-                           },
-                    ClientRequestToken: clientToken,
-                    JobTag: base64JobId,
-                    MinConfidence: 0.0,
-                    NotificationChannel: {
-                   //   RoleArn: 'arn:aws:iam::753770047419:role/RekognitionToSNS', /* required */
-                    //  SNSTopicArn: 'arn:aws:sns:us-east-1:753770047419:AmazonRekognition_Loictest' /* required */
-                        RoleArn: REKO_SNS_ROLE_ARN,
-                        SNSTopicArn: SNS_TOPIC_ARN
-                    }
-                  };
-                  rekognition.startLabelDetection(params, function(err, result) {
-                    if (err)  return callback("Error submitting job to AI: " + err );
-                    else {
-                        console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
-                        callback(null, result);
-                    }   
-                              
-                  });
-                    
+            var params = {};
+
+                //startCelebrityRecognition
+                //startContentModeration
+                //startFaceDetection
+                //startFaceSearch
+                //startLabelDetection
+                //startPersonTracking
+                
+                switch(aiJobType) {
+                    case "startCelebrityRecognition":
+                        params = {
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            JobTag: base64JobId,
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+
+                        rekognition.startCelebrityRecognition(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;
+                        
+                    case "startContentModeration":
+                        params = {
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            JobTag: base64JobId,
+                            MinConfidence: 0.0,
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+                        rekognition.startContentModeration(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;
+                    case "startFaceDetection":
+                        params = {
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            JobTag: base64JobId,
+                            FaceAttributes: 'ALL',     //Need to enable as a possible parameter
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+                        rekognition.startFaceDetection(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;
+
+                    case "startFaceSearch":
+                        params = {
+                            CollectionId: 'STRING_VALUE',  //Need to implement a collection
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            FaceMatchThreshold: 0.0,
+                            JobTag: base64JobId,
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+                        rekognition.startFaceSearch(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;
+                    case "startLabelDetection":
+
+                        params = {
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            JobTag: base64JobId,
+                            MinConfidence: 0.0,
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+                        rekognition.startLabelDetection(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;
+                    case "startPersonTracking":
+                        params = {
+                            Video: { /* required */
+                                S3Object: {
+                                    Bucket: data.Bucket,
+                                    Name: data.Key
+                                        }
+                                    },
+                            ClientRequestToken: clientToken,
+                            JobTag: base64JobId,
+                            NotificationChannel: {
+                                RoleArn: REKO_SNS_ROLE_ARN,
+                                SNSTopicArn: SNS_TOPIC_ARN
+                            }
+                        };
+                        rekognition.startPersonTracking(params, function(err, result) {
+                            if (err)  return callback("Error submitting job to AI: " + err );
+                            else {
+                                console.log ("Result from submitting job to AWS Rekognition : ", JSON.stringify(result));
+                                callback(null, result);
+                            }
+                        });     
+                        break;    
+
+                    default:
+                        return callback("The aiJobType defined in the job doesn't match one of the handled command: ", aiJobType );
+                }
             },
         function (data, callback) {
                 // AI job has been submitted 

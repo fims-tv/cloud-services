@@ -49,6 +49,7 @@ exports.handler = (event, context, callback) => {
     console.log('Message from SNS:', JSON.stringify(message));
  
     var rekoJobId = message.JobId;
+    var rekoJobType = message.API;
     var status = message.Status;
     var jobAssignmentId;
     var jobAssignment;
@@ -63,6 +64,7 @@ exports.handler = (event, context, callback) => {
      }
 
     console.log('rekoJobId:', rekoJobId);
+    console.log('rekoJobType:', rekoJobType);
     console.log('status:', status);
     console.log('jobAssignment:', jobAssignmentId);
 
@@ -105,20 +107,77 @@ exports.handler = (event, context, callback) => {
             },
             function (jobAssignment, callback) {
                 console.log("Get the result from Rekognition");
-               
                 var rekognition = new AWS.Rekognition();
-                var params = {
-                         JobId: rekoJobId, /* required */
-                         MaxResults: 1000000,
-                         SortBy: 'NAME'
-                };
-                rekognition.getLabelDetection(params, callback);
+
+
+                switch(rekoJobType) {
+                    case "StartLabelDetection":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000,
+                                    SortBy: 'NAME'
+                        };
+                        rekognition.getLabelDetection(params, callback);
+                        break;
+                        
+                    case "StartContentModeration":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000,
+                                    SortBy: 'NAME'
+                        };
+                        rekognition.getContentModeration(params, callback);
+                        break;
+
+                    case "StartPersonTracking":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000,
+                                    SortBy: 'TIMESTAMP'
+                        };
+                        rekognition.getPersonTracking(params, callback);
+                        break;
+
+                    case "StartCelebrityRecognition":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000,
+                                    SortBy: 'TIMESTAMP'
+                        };
+                        rekognition.getCelebrityRecognition(params, callback);
+                        break;
+
+                    case "StartFaceDetection":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000
+                        };
+                        rekognition.getFaceDetection(params, callback);
+                        break;
+
+                    case "StartFaceSearch":
+                        var params = {
+                                    JobId: rekoJobId, /* required */
+                                    MaxResults: 1000000,
+                                    SortBy: 'TIMESTAMP'
+                        };
+                        rekognition.getFaceSearch(params, callback);
+                        break;    
+                    default:
+                        return callback("The rekoJobType job type is not one of the supported type: ", rekoJobType );
+                }
+                
+                
 
             },
             function (data, callback) {
                 if (!data) {
-                    return callback("getLabelDetection didn't return any data");
+                    return callback("No data returned by AWS Reko Engine");
                 } else {
+                    // AWS Reko may create empty json element
+                    // remove them
+                    walkclean(data);
+                 
                     // Add extrated metadata to JobAssigment 
                     var extractedAIData  = {};
                     extractedAIData.VideoMetadata = data;
@@ -175,4 +234,20 @@ exports.handler = (event, context, callback) => {
 };
 
 
-  
+
+ function walkclean(x) {
+    var type = typeof x;
+    if (x instanceof Array) {
+      type = 'array';
+    }
+    if ((type == 'array') || (type == 'object')) {
+      for (k in x) {
+        var v = x[k];
+        if ((v === '') && (type == 'object')) {
+          delete x[k];
+        } else {
+          walkclean(v);
+        }
+      }
+    }
+  }

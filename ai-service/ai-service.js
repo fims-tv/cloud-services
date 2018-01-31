@@ -5,7 +5,6 @@ var FIMS = require("fims-aws");
 
 var lambda = new FIMS.AWS.Lambda({ apiVersion: "2015-03-31" });
 
-
 exports.handler = FIMS.API.handler;
 exports.FIMS = FIMS;
 

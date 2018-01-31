@@ -33,9 +33,9 @@ table = process.env.TABLE;
 
 console.log("Starting function");
 
-console.log("event == >", event );
-console.log("context == >", context );
-
+console.log("event == >", JSON.stringify(event));
+console.log("context == >", JSON.stringify(context));
+console.log("Records Count == >", event.Records.length);
 
   //  Log out the entire invocation
   // console.log(JSON.stringify(event, null, 2));
@@ -100,8 +100,13 @@ console.log("context == >", context );
     // Create promises for every record that needs to be processed
     // resolve as each successful callback comes in
     console.log(event.Records);
-    var records = _.map(event.Records, function(record, index, all_records){
-      console.log("record", record);
+
+     var filteredRecords;
+     filteredRecords = FilteredRecords(event.Records);
+     console.log("filteredRecords.length", filteredRecords.length);
+
+    var records = _.map(filteredRecords, function(record, index, all_records){
+      console.log("record", JSON.stringify(record));
       return when.promise(function(resolve, reject, notify){
         if (record.eventName == 'REMOVE') {
           resolve(record);
@@ -256,3 +261,38 @@ console.log("values == >",values );
 
   return body;
 };
+
+
+function FilteredRecords(records) {
+ 
+  var currentUnixTime;
+//  currentUnixTime = Date.now().getUnixTime();
+  currentUnixTime = Math.round((new Date()).getTime() / 1000);
+  const copy = [];
+ 
+  records.forEach(function(record){
+  // var recordTime = new Date(record.dynamodb.ApproximateCreationDateTime);
+   var recordTimeUnix = record.dynamodb.ApproximateCreationDateTime;
+   var delta =  currentUnixTime - recordTimeUnix;
+
+   console.log("currentUnixTime == > ", currentUnixTime);
+   console.log("recordTimeUnix == > ", recordTimeUnix);
+  // console.log("recordTime == > ", recordTime);
+   console.log("delta == > ", delta);
+
+   if (delta < 60 ) {  //if the record is less than 1 minute old, then process it
+                         // the Datastream contains all updates made to database
+                         // in last 24 hours 
+             console.log("record recent enough, adding to list of record to be processed:", JSON.stringify(record));            
+             copy.push(record);
+   }
+   else {
+             console.log("record NOT recent enough, ignoring record:", JSON.stringify(record)); 
+
+   }
+
+});
+
+   return copy;
+}
+

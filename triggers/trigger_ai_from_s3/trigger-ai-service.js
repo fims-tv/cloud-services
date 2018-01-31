@@ -12,6 +12,7 @@ var s3 = new AWS.S3();
 const SERVICE_REGISTRY_URL = process.env.SERVICE_REGISTRY_URL;
 const JOB_OUTPUT_BUCKET = process.env.JOB_OUTPUT_BUCKET;
 const JOB_OUTPUT_KEY_PREFIX = process.env.JOB_OUTPUT_KEY_PREFIX;
+const AI_REKO_JOB_TYPE = process.env.AI_REKO_JOB_TYPE;
 
 const jobProfileLabel = "ExtractAIMetadata";
 
@@ -38,6 +39,13 @@ exports.handler = (event, context, callback) => {
         decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, " "));
     console.log("srcKey=" + srcKey)
 
+    //Validate the Ai job type environment variable
+    
+    if (!AI_REKO_JOB_TYPE) {
+        callback('The environment variable AI_REKO_JOB_TYPE is indefined, cannot selected the type of AI job required ');
+        return;
+    }
+    
     // Infer the image type.
     var typeMatch = srcKey.match(/\.([^.]*)$/);
     if (!typeMatch) {
@@ -76,7 +84,8 @@ exports.handler = (event, context, callback) => {
                     "fims:outputLocation": new core.Locator({
                         awsS3Bucket: JOB_OUTPUT_BUCKET,
                         awsS3Key: JOB_OUTPUT_KEY_PREFIX
-                    })
+                    }),
+                    "aiJobType": AI_REKO_JOB_TYPE
                 }),
                 null  // no need for Aync endpoint as they don't exist
             );

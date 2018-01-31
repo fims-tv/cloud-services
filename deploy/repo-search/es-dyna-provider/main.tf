@@ -16,8 +16,8 @@ resource "aws_lambda_function" "dyna_to_es_lambda" {
   handler          = "${var.triggerLambdaModuleName}.handler"
   source_code_hash = "${base64sha256(file("./../repo-search/build/dynamo-to-elasticsearch.zip"))}"
   runtime          = "nodejs6.10"
-  timeout          = "30"
-  memory_size      = "512"
+  timeout          = "240"
+  memory_size      = "2048"
 
   environment {
     variables = {

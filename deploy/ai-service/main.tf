@@ -130,9 +130,10 @@ resource "aws_lambda_function" "api_ai_service_lambda" {
   memory_size      = "1024"
 }
 
-#################################
+
+###########################################
 #  Lambda : worker-ai_service_lambda_worker
-#################################
+###########################################
 
 resource "aws_lambda_function" "worker_lambda" {
   filename         = "./../ai-service/build/worker-lambda-package.zip"
@@ -151,8 +152,136 @@ resource "aws_lambda_function" "worker_lambda" {
       SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}"
     }
   }
-
 }
+
+
+
+#################################################################
+# 2 Lambda : worker-ai_service_lambda_worker_ContentModeration
+#################################################################
+
+resource "aws_lambda_function" "ContentModeration_worker_lambda" {
+  filename         = "./../ai-service/build/worker-lambda-package.zip"
+  function_name    = "${local.env_composite_name}_ContentModeration_worker"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.workerApiLambdaModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../ai-service/build/worker-lambda-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "60"
+  memory_size      = "1024"
+
+
+  environment {
+    variables = {
+      REKO_SNS_ROLE_ARN = "${aws_iam_role.iam_role_Reko_to_SNS.arn}",
+      SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}",
+      AI_REKO_JOB_TYPE = "startContentModeration"
+    }
+  }
+}
+
+
+#################################################################
+# 3 Lambda : worker-ai_service_lambda_worker_FaceDetection
+#################################################################
+
+resource "aws_lambda_function" "FaceDetection_worker_lambda" {
+  filename         = "./../ai-service/build/worker-lambda-package.zip"
+  function_name    = "${local.env_composite_name}_FaceDetection_worker"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.workerApiLambdaModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../ai-service/build/worker-lambda-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "60"
+  memory_size      = "1024"
+
+
+  environment {
+    variables = {
+      REKO_SNS_ROLE_ARN = "${aws_iam_role.iam_role_Reko_to_SNS.arn}",
+      SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}",
+      AI_REKO_JOB_TYPE = "startFaceDetection"
+    }
+  }
+}
+
+
+#################################################################
+# 4 Lambda : worker-ai_service_lambda_worker_FaceSearch
+#################################################################
+
+resource "aws_lambda_function" "FaceSearch_worker_lambda" {
+  filename         = "./../ai-service/build/worker-lambda-package.zip"
+  function_name    = "${local.env_composite_name}_FaceSearch_worker"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.workerApiLambdaModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../ai-service/build/worker-lambda-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "60"
+  memory_size      = "1024"
+
+
+  environment {
+    variables = {
+      REKO_SNS_ROLE_ARN = "${aws_iam_role.iam_role_Reko_to_SNS.arn}",
+      SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}",
+      AI_REKO_JOB_TYPE = "startFaceSearch"
+    }
+  }
+}
+
+
+#################################################################
+# 5 Lambda : worker-ai_service_lambda_worker_LabelDetection
+#################################################################
+
+resource "aws_lambda_function" "LabelDetection_worker_lambda" {
+  filename         = "./../ai-service/build/worker-lambda-package.zip"
+  function_name    = "${local.env_composite_name}_LabelDetection_worker"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.workerApiLambdaModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../ai-service/build/worker-lambda-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "60"
+  memory_size      = "1024"
+
+
+  environment {
+    variables = {
+      REKO_SNS_ROLE_ARN = "${aws_iam_role.iam_role_Reko_to_SNS.arn}",
+      SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}",
+      AI_REKO_JOB_TYPE = "startLabelDetection"
+    }
+  }
+}
+
+
+#################################################################
+# 6 Lambda : worker-ai_service_lambda_worker_PersonTracking
+#################################################################
+
+resource "aws_lambda_function" "PersonTracking_worker_lambda" {
+  filename         = "./../ai-service/build/worker-lambda-package.zip"
+  function_name    = "${local.env_composite_name}_PersonTracking_worker"
+  role             = "${aws_iam_role.iam_for_exec_lambda.arn}"
+  handler          = "${var.workerApiLambdaModuleName}.handler"
+  source_code_hash = "${base64sha256(file("./../ai-service/build/worker-lambda-package.zip"))}"
+  runtime          = "nodejs4.3"
+  timeout          = "60"
+  memory_size      = "1024"
+
+
+  environment {
+    variables = {
+      REKO_SNS_ROLE_ARN = "${aws_iam_role.iam_role_Reko_to_SNS.arn}",
+      SNS_TOPIC_ARN=   "${aws_sns_topic.sns_topic_reko_output.arn}",
+      AI_REKO_JOB_TYPE = "startPersonTracking"
+    }
+  }
+}
+
+
+
 
 #################################
 #  Lambda : worker-result-ai_service_lambda_worker_result
